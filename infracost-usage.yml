@@ -1,0 +1,6 @@
+version: 0.1
+resource_usage:
+  aws_dynamodb_table.this:
+    storage_gb: 10
+    monthly_read_request_units: 20000
+    monthly_write_request_units: 10000
