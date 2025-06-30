@@ -13,4 +13,4 @@ size = "small"
 
 # EC2
 ssh_key_name     = "my-dev-key"       # la clé SSH générée sur AWS
-allowed_ssh_cidr = "0.0.0.0/0"        # autorisé dans les environnements dev uniquement
+allowed_ssh_cidr = ["0.0.0.0/0"]        # autorisé dans les environnements dev uniquement

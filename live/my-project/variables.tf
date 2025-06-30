@@ -2,6 +2,15 @@ variable "project" {
   description = "Project name for tagging"
   type = string
 }
+variable "environment" {
+  description = "The deployment environment (e.g., develop, uat, preprod, prod)."
+  type        = string
+}
+
+variable "size" {
+  description = "The infrastructure size (e.g., small, medium, large)."
+  type        = string
+}
 variable "ssh_key_name" {
   description = "Key pair name for SSH (for EC2 instances)"
   type = string
@@ -26,8 +35,8 @@ variable "environment_to_size_map" {
   type = map(string)
   default = {
     develop = "small"
-    uat     = "small"
-    preprod = "medium"
+    uat     = "medium"
+    preprod = "large"
     prod    = "large"
   }
 }

@@ -12,4 +12,4 @@ size = "large"
 
 # EC2
 ssh_key_name     = "my-prod-key"
-allowed_ssh_cidr = "192.168.0.0/24"  # restreint à une plage privée/VPN sécurisé
+allowed_ssh_cidr = ["192.168.0.0/24"]  # restreint à une plage privée/VPN sécurisé

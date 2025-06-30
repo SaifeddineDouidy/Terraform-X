@@ -1,9 +1,9 @@
-terraform {
+terraform { 
   backend "s3" {
-    bucket         = "my-terraform-state-bucket"
-    key            = "my-project/${terraform.workspace}.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "my-terraform-locks"
+    bucket         = "terraform-state-bucket-test-v1"
+    key            = "my-project/terraform.tfstate"
+    region         = "eu-north-1"
+    dynamodb_table = "terraform-locks"
     encrypt        = true
   }
 }

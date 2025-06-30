@@ -12,4 +12,4 @@ size = "medium"
 
 # EC2
 ssh_key_name     = "my-uat-key"
-allowed_ssh_cidr = "102.120.45.0/24"  # restreint à ton IP ou VPN d’entreprise
+allowed_ssh_cidr = ["102.120.45.0/24"]  # restreint à ton IP ou VPN d’entreprise
