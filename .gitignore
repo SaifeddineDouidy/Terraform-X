@@ -1,4 +1,10 @@
+# Ignore Infracost hidden folder
 .infracost/
-.terraform*/
-.terraform*
+
+# Ignore Terraform working directory and lock file
+.terraform/
+.terraform.lock.hcl
+
+# Ignore Terraform plan output files
 *.tfplan
+
