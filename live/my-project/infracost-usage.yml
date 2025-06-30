@@ -1,3 +1,4 @@
+version: 0.1
 resource_usage:
   aws_dynamodb_table.this:
     monthly_read_request_units: 10000
