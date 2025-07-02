@@ -5,6 +5,16 @@ variable "project" {
 variable "environment" {
   description = "The deployment environment (e.g., develop, uat, preprod, prod)."
   type        = string
+  validation {
+    condition     = contains(["Dev", "Stage", "Prod"], title(var.environment))
+    error_message = "Environment must be one of: Dev, Stage, Prod (case-sensitive)"
+  }
+
+}
+
+variable "service" {
+  description = "Service name for tagging"
+  type        = string
 }
 
 variable "size" {

@@ -7,8 +7,10 @@ project     = "my-project"
 # environment sera injecté via le workspace Terraform (preprod ou prod)
 
 # Taille de l'infrastructure
-# Cela donnera t2.large ou t2.xlarge + 3 à 5 noeuds EKS + DynamoDB 50 à 100 RCU/WCU
+# Cela donnera t4g.large ou t4g.xlarge + 3 à 5 noeuds EKS + DynamoDB 50 à 100 RCU/WCU
 size = "large"
+
+service = "project-x"
 
 # EC2
 ssh_key_name     = "my-prod-key"

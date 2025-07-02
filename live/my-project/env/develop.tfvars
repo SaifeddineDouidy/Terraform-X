@@ -7,9 +7,11 @@ project     = "my-project"
 environment = "develop"
 
 # Taille de l'infrastructure
-# Cela déterminera instance_type = t2.small, 1 noeud EKS, etc.
+# Cela déterminera instance_type = t4g.small, 1 noeud EKS, etc.
 # via le module variables
 size = "small"
+
+service = "project-x"
 
 # EC2
 ssh_key_name     = "my-dev-key"       # la clé SSH générée sur AWS

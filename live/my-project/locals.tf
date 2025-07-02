@@ -10,7 +10,9 @@ locals {
       lookup(var.environment_to_size_map, local.environment)
   )
   common_tags = {
-    Project = var.project
-    Environment = local.environment
+    Project     = var.project
+    Service     = var.service
+    Environment = title(local.environment) # Ensures case: Dev/Stage/Prod
   }
+
 }

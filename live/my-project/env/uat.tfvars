@@ -10,6 +10,8 @@ environment = "uat"
 # Cela donnera t2.medium + 2 noeuds EKS + DynamoDB 20 RCU/WCU
 size = "medium"
 
+service = "project-x"
+
 # EC2
 ssh_key_name     = "my-uat-key"
 allowed_ssh_cidr = ["102.120.45.0/24"]  # restreint à ton IP ou VPN d’entreprise
