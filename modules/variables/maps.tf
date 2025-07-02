@@ -1,10 +1,10 @@
 variable "instance_type_map" {
   type = map(string)
   default = {
-    small  = "t2.small"
-    medium = "t2.medium"
-    large  = "t2.large"
-    xlarge = "t2.xlarge"
+    small  = "t4g.small"
+    medium = "t3.medium"
+    large  = "t4g.large"
+    xlarge = "t4g.xlarge"
   }
 }
 
