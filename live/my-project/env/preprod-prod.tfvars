@@ -4,6 +4,7 @@ public_subnet_cidrs = ["10.2.1.0/24", "10.2.2.0/24"]
 
 # Projet et Environnement
 project     = "my-project"
+environment = "Preprod-Prod"  # Nom de l'environnement, utilisé pour le workspace Terraform
 # environment sera injecté via le workspace Terraform (preprod ou prod)
 
 # Taille de l'infrastructure

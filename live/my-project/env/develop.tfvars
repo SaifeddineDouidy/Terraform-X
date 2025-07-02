@@ -4,7 +4,7 @@ public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
 
 # Projet et Environnement
 project     = "my-project"
-environment = "develop"
+environment = "Dev"
 
 # Taille de l'infrastructure
 # Cela déterminera instance_type = t4g.small, 1 noeud EKS, etc.

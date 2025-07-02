@@ -4,7 +4,7 @@ public_subnet_cidrs = ["10.1.1.0/24", "10.1.2.0/24"]
 
 # Projet et Environnement
 project     = "my-project"
-environment = "uat"
+environment = "Stage-UAT"  # Nom de l'environnement, utilisé pour le workspace Terraform
 
 # Taille de l'infrastructure
 # Cela donnera t2.medium + 2 noeuds EKS + DynamoDB 20 RCU/WCU
