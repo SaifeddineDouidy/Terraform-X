@@ -2,52 +2,50 @@ variable "project" {
   description = "Project name for tagging"
   type = string
 }
-variable "environment" {
-  description = "The deployment environment (e.g., develop, uat, preprod, prod)."
-  type        = string
-  validation {
-    condition     = contains(["Dev", "Stage-UAT", "Preprod-Prod"], title(var.environment))
-    error_message = "Environment must be one of: Dev, Stage, Prod (case-sensitive)"
-  }
-
-}
 
 variable "service" {
   description = "Service name for tagging"
-  type        = string
+  type = string
 }
+variable "environment" {
+  description = "The deployment environment (e.g., develop, uat, preprod, prod)."
+}
+
 
 variable "size" {
   description = "The infrastructure size (e.g., small, medium, large)."
-  type        = string
+  type = string
 }
+
 variable "ssh_key_name" {
   description = "Key pair name for SSH (for EC2 instances)"
   type = string
 }
+
 variable "allowed_ssh_cidr" {
   description = "List of CIDRs allowed to SSH into instances (set narrowly for prod)"
   type = list(string)
   default = ["0.0.0.0/0"]
 }
 
-variable "workspace_to_environment_map" {
+variable "workspace_to_environment_tag_map" {
   type = map(string)
   default = {
-    develop = "develop"
-    uat     = "uat"
-    preprod = "preprod"
-    prod    = "prod"
+    dev     = "Dev"
+    develop = "Dev"
+    live    = "Prod"
+    prod    = "Prod"
+    uat     = "Stage"
+    staging = "Stage"
   }
 }
 
 variable "environment_to_size_map" {
   type = map(string)
   default = {
-    develop = "small"
-    uat     = "medium"
-    preprod = "large"
-    prod    = "large"
+    "Dev"   = "small"
+    "Stage" = "medium"
+    "Prod"  = "large"
   }
 }
 
