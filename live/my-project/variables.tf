@@ -31,10 +31,10 @@ variable "allowed_ssh_cidr" {
 variable "workspace_to_environment_tag_map" {
   type = map(string)
   default = {
-    develop = "Dev"
-    preprod = "Preprod"
-    prod    = "Prod"
-    uat     = "Uat"
+    "dev"     = "Dev"
+    "uat"     = "Stage"
+    "preprod" = "Stage"
+    "prod"    = "Prod"
   }
 }
 
