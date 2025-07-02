@@ -1,12 +1,22 @@
 locals {
-  environment = lookup(
-    var.workspace_to_environment_map,
+  # Map Terraform workspace to a normalized FinOps-approved Environment tag
+  environment_mapped = lookup(
+    {
+      dev    = "Dev"
+      develop = "Dev"
+      live   = "Prod"
+      prod   = "Prod"
+      uat    = "Stage"
+      staging = "Stage"
+    },
     terraform.workspace,
-    terraform.workspace
+    "Dev" # default if not explicitly mapped
   )
 
-  environment_mapped = title(local.environment)
-
+  size = (local.environment_mapped == "Dev" ?
+    lookup(var.workspace_to_size_map, terraform.workspace, "small") :
+    lookup(var.environment_to_size_map, local.environment_mapped)
+  )
   common_tags = {
     Project     = var.project
     Service     = var.service

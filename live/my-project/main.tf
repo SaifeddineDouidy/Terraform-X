@@ -8,7 +8,8 @@ module "network" {
   source               = "../../modules/network"
   vpc_cidr             = var.vpc_cidr
   public_subnet_cidrs  = var.public_subnet_cidrs
-  name_prefix          = local.environment
+  name_prefix          = local.environment_mapped
+
 }
 
 module "compute" {
@@ -17,7 +18,8 @@ module "compute" {
   subnet_ids           = module.network.public_subnet_ids
   instance_type        = module.variables.instance_type
   ami_id               = data.aws_ami.ubuntu.id
-  name_prefix          = local.environment
+  name_prefix          = local.environment_mapped
+
 }
 
 module "kubernetes" {
@@ -25,14 +27,16 @@ module "kubernetes" {
   subnet_ids    = module.network.public_subnet_ids
   instance_type = module.variables.instance_type
   node_count    = module.variables.node_count
-  name_prefix   = local.environment
+  name_prefix   = local.environment_mapped
+
 }
 
 module "database" {
   source         = "../../modules/database"
   read_capacity  = module.variables.dynamodb_read_capacity
   write_capacity = module.variables.dynamodb_write_capacity
-  name_prefix    = local.environment
+  name_prefix    = local.environment_mapped
+
 }
 
 data "aws_ami" "ubuntu" {
