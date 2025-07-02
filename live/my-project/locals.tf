@@ -4,15 +4,12 @@ locals {
     terraform.workspace,
     terraform.workspace
   )
-  size = (
-    local.environment == "develop" ?
-      lookup(var.workspace_to_size_map, terraform.workspace, "small") :
-      lookup(var.environment_to_size_map, local.environment)
-  )
+
+  environment_mapped = title(local.environment)
+
   common_tags = {
     Project     = var.project
     Service     = var.service
-    Environment = title(local.environment) # Ensures case: Dev/Stage/Prod
+    Environment = local.environment_mapped
   }
-
 }
