@@ -39,6 +39,32 @@ module "database" {
 
 }
 
+module "ecr" {
+  source           = "../../modules/ecr"
+  repository_names = var.ecr_repository_names
+}
+module "sonarqube" {
+  count         = local.environment_mapped == "Dev" ? 1 : 0
+  source        = "../../modules/sonarqube"
+  ami_id        = var.sonarqube_ami_id
+  instance_type = "t2.medium"
+  subnet_id     = module.network.public_subnet_ids[0]
+  vpc_id        = module.network.vpc_id
+  name_prefix   = local.environment_mapped
+  common_tags   = local.common_tags
+}
+
+module "clickhouse" {
+  count         = local.environment_mapped == "Dev" ? 1 : 0
+  source        = "../../modules/clickhouse"
+  ami_id        = var.clickhouse_ami_id
+  vpc_id        = module.network.vpc_id
+  instance_type = "t2.medium"
+  subnet_id     = module.network.public_subnet_ids[0]
+  name_prefix   = local.environment_mapped
+  common_tags   = local.common_tags
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
   filter {

@@ -9,8 +9,8 @@ variable "service" {
 }
 variable "environment" {
   description = "The deployment environment (e.g., develop, uat, preprod, prod)."
+  type = string
 }
-
 
 variable "size" {
   description = "The infrastructure size (e.g., small, medium, large)."
@@ -25,18 +25,16 @@ variable "ssh_key_name" {
 variable "allowed_ssh_cidr" {
   description = "List of CIDRs allowed to SSH into instances (set narrowly for prod)"
   type = list(string)
-  default = ["0.0.0.0/0"]
+  default = ["0.0.0.0/0"] # Change this to a more restrictive CIDR in production
 }
 
 variable "workspace_to_environment_tag_map" {
   type = map(string)
   default = {
-    dev     = "Dev"
     develop = "Dev"
-    live    = "Prod"
+    preprod = "Preprod"
     prod    = "Prod"
-    uat     = "Stage"
-    staging = "Stage"
+    uat     = "Uat"
   }
 }
 
@@ -44,8 +42,9 @@ variable "environment_to_size_map" {
   type = map(string)
   default = {
     "Dev"   = "small"
-    "Stage" = "medium"
+    "Uat" = "small"
     "Prod"  = "large"
+    "Preprod" = "large"
   }
 }
 
@@ -55,6 +54,8 @@ variable "workspace_to_size_map" {
 }
 
 variable "aws_region" {
+  type        = string
+  description = "AWS region"
   default = "us-east-1"
 }
 
@@ -62,4 +63,20 @@ variable "vpc_cidr" {}
 
 variable "public_subnet_cidrs" {
   type = list(string)
+}
+
+variable "sonarqube_ami_id" {
+  type        = string
+  description = "AMI ID for SonarQube instance"
+}
+
+variable "clickhouse_ami_id" {
+  type        = string
+  description = "AMI ID for ClickHouse instance"
+}
+
+variable "ecr_repository_names" {
+  type        = list(string)
+  default     = ["my-app-repo"]
+  description = "List of ECR repository names"
 }
