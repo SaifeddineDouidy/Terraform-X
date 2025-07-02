@@ -47,7 +47,7 @@ module "sonarqube" {
   count         = local.environment_mapped == "Dev" ? 1 : 0
   source        = "../../modules/sonarqube"
   ami_id        = var.sonarqube_ami_id
-  instance_type = "t2.medium"
+  instance_type = "t4g.small"
   subnet_id     = module.network.public_subnet_ids[0]
   vpc_id        = module.network.vpc_id
   name_prefix   = local.environment_mapped
@@ -59,7 +59,7 @@ module "clickhouse" {
   source        = "../../modules/clickhouse"
   ami_id        = var.clickhouse_ami_id
   vpc_id        = module.network.vpc_id
-  instance_type = "t2.medium"
+  instance_type = "t4g.small"
   subnet_id     = module.network.public_subnet_ids[0]
   name_prefix   = local.environment_mapped
   common_tags   = local.common_tags
