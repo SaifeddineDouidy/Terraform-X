@@ -15,8 +15,6 @@ allowed_ssh_cidr = ["0.0.0.0/0"] # Restrict access to a specific CIDR block, e.g
 
 # SonarQube
 sonarqube_ami_id = "ami-12345678" # Replace with actual AMI ID
-sonarqube_instance_type = "t2.medium"
 
 # ClickHouse
 clickhouse_ami_id = "ami-87654321" # Replace with actual AMI ID
-clickhouse_instance_type = "t2.medium"

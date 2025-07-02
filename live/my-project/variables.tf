@@ -32,8 +32,8 @@ variable "workspace_to_environment_tag_map" {
   type = map(string)
   default = {
     "dev"     = "Dev"
-    "uat"     = "Stage"
-    "preprod" = "Stage"
+    "uat"     = "Uat"
+    "preprod" = "Preprod"
     "prod"    = "Prod"
   }
 }
