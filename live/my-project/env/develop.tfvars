@@ -4,6 +4,7 @@ public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
 
 # Projet
 project     = "my-project"
+environment = "develop"         # Environment name, e.g., "uat", "prod",
 
 # Taille de l'infrastructure
 size = "small"
