@@ -26,8 +26,8 @@ resource "aws_instance" "sonarqube" {
   vpc_security_group_ids = [aws_security_group.sonarqube_sg.id]
   tags = merge(var.common_tags, { Name = "${var.name_prefix}-sonarqube" })
   root_block_device {
-    volume_type = "gp2"  # Adjust as needed
-    volume_size = 20     # Adjust as needed
+    volume_type = "gp3"  # Adjust as needed
+    volume_size = 10     # Adjust as needed
     tags = var.common_tags
   }
 }
