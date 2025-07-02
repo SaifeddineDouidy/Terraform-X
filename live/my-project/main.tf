@@ -1,7 +1,7 @@
 module "variables" {
   source      = "../../modules/variables"
-  environment = local.environment
-  size        = local.size
+  environment = var.environment
+  size        = var.size
 }
 
 module "network" {
