@@ -42,6 +42,7 @@ module "database" {
 module "ecr" {
   source           = "../../modules/ecr"
   repository_names = var.ecr_repository_names
+  lifecycle_policy = var.lifecycle_policy
 }
 module "sonarqube" {
   count         = local.environment_mapped == "Dev" ? 1 : 0

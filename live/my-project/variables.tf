@@ -80,3 +80,8 @@ variable "ecr_repository_names" {
   default     = ["my-app-repo"]
   description = "List of ECR repository names"
 }
+variable "lifecycle_policy" {
+  description = "JSON string for the ECR lifecycle policy"
+  type        = string
+  default     = null
+}
