@@ -17,3 +17,21 @@ output "database_table_name" {
 output "eks_cluster_endpoint" {
   value = module.kubernetes.cluster_endpoint
 }
+output "eks_cluster_name" {
+  value = module.kubernetes.cluster_name
+}
+output "ecr_repository_urls" {
+  value = module.ecr.repository_urls
+}
+output "sonarqube_instance_id" {
+  value = module.sonarqube.instance_id
+}
+output "clickhouse_instance_id" {
+  value = module.clickhouse.instance_id
+}
+output "sonarqube_url" {
+  value = module.sonarqube.instance_url
+}
+output "clickhouse_url" {
+  value = module.clickhouse.instance_url
+}
