@@ -8,6 +8,8 @@ module "network" {
   source               = "../../modules/network"
   vpc_cidr             = var.vpc_cidr
   public_subnet_cidrs  = var.public_subnet_cidrs
+  private_subnet_cidrs = var.private_subnet_cidrs
+  vpc_id               = var.vpc_id
   name_prefix          = local.environment_mapped
 
 }
@@ -41,10 +43,64 @@ module "database" {
 
 module "ecr" {
   source           = "../../modules/ecr"
-  repository_names = var.ecr_repository_names
+  for_each         = { for svc in var.ecs_services : svc.name => svc }
+  repository_name = each.key
   lifecycle_policy = var.lifecycle_policy
-
+  tags = local.common_tags
 }
+
+module "ecs" {
+  source = "../../modules/ecs_fargate"
+  security_group_ids = [module.network.ecs_sg_id]
+  cluster_name       = "${local.environment_mapped}-${var.project}-cluster"
+  subnet_ids         = module.network.private_subnet_ids
+  aws_region    = var.aws_region
+
+  services = { for svc in var.ecs_services :
+    svc.name => {
+      cpu        = svc.cpu
+      memory     = svc.memory
+      desired    = svc.desired_count
+      port       = svc.port
+      image_url  = module.ecr[svc.name].repository_url
+      env        = { ENV = local.environment_mapped }
+    }
+  }
+
+  execution_role_arn = module.iam.ecs_execution_role_arn
+  task_role_arn      = module.iam.ecs_task_role_arn
+
+  tags = local.common_tags
+}
+
+module "alb" {
+  source             = "../../modules/alb"
+  name_prefix        = local.environment_mapped
+  vpc_id             = module.network.vpc_id
+  public_subnet_ids  = module.network.public_subnet_ids
+  security_group_id  = module.network.alb_sg_id
+  services = {
+    for svc in var.ecs_services : svc.name => {
+      port = svc.port
+    }
+  }
+  tags = local.common_tags
+}
+
+module "api_gateway" {
+  source = "../../modules/api_gateway"
+  name   = "${local.environment_mapped}-${var.project}-api"
+
+  routes = {
+    for svc in var.ecs_services : svc.name => {
+      path       = "/${svc.name}"
+      target_url = "http://${module.alb.alb_dns_name}/${svc.name}"
+    }
+  }
+
+  tags = local.common_tags
+}
+
 module "sonarqube" {
   count         = local.environment_mapped == "Dev" ? 1 : 0
   source        = "../../modules/sonarqube"
@@ -74,4 +130,11 @@ data "aws_ami" "ubuntu" {
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
   owners = ["099720109477"]
+}
+
+
+module "iam" {
+  source      = "../../modules/iam"
+  name_prefix = local.environment_mapped
+  tags        = local.common_tags
 }

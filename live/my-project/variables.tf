@@ -53,6 +53,11 @@ variable "workspace_to_size_map" {
   default = { develop = "small" }
 }
 
+variable "vpc_id" {
+  type = number
+  description = "VPC ID where resources will be created"
+}
+
 variable "aws_region" {
   type        = string
   description = "AWS region"
@@ -63,6 +68,10 @@ variable "vpc_cidr" {}
 
 variable "public_subnet_cidrs" {
   type = list(string)
+}
+
+variable "private_subnet_cidrs" { 
+  type = list(string) 
 }
 
 variable "sonarqube_ami_id" {
@@ -84,4 +93,14 @@ variable "lifecycle_policy" {
   description = "JSON string for the ECR lifecycle policy"
   type        = string
   default     = null
+}
+
+variable "ecs_services" {
+  type = list(object({
+    name          = string
+    cpu           = number
+    memory        = number
+    desired_count = number
+    port          = number
+  }))
 }
