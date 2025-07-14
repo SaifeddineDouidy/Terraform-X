@@ -22,7 +22,6 @@ resource "aws_instance" "clickhouse" {
   ami           = var.ami_id
   instance_type = var.instance_type
   subnet_id     = var.subnet_id
-  volume_tags = var.common_tags
   vpc_security_group_ids = [aws_security_group.clickhouse_sg.id]
   tags = merge(var.common_tags, { Name = "${var.name_prefix}-clickhouse" })
   root_block_device {

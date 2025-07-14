@@ -3,6 +3,22 @@ resource "aws_ecs_cluster" "this" {
   tags = var.tags
 }
 
+
+resource "aws_ecs_service" "this" {
+  for_each = aws_ecs_task_definition.svc
+
+  name            = each.key
+  cluster         = aws_ecs_cluster.this.id
+  task_definition = each.value.arn
+  desired_count   = var.services[each.key].desired
+  launch_type     = "FARGATE"
+  network_configuration {
+    subnets         = var.subnet_ids
+    security_groups = var.security_group_ids
+    assign_public_ip = false
+  }
+}
+
 resource "aws_ecs_task_definition" "svc" {
   for_each = var.services
 
@@ -37,17 +53,3 @@ resource "aws_ecs_task_definition" "svc" {
   ])
 }
 
-resource "aws_ecs_service" "svc" {
-  for_each = aws_ecs_task_definition.svc
-
-  name            = each.key
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = each.value.arn
-  desired_count   = var.services[each.key].desired
-  launch_type     = "FARGATE"
-  network_configuration {
-    subnets         = var.subnet_ids
-    security_groups = var.security_group_ids
-    assign_public_ip = false
-  }
-}

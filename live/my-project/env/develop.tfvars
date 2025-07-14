@@ -4,6 +4,9 @@
 vpc_cidr            = "10.0.0.0/16"
 public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
 private_subnet_cidrs = ["10.0.3.0/24", "10.0.4.0/24"]
+service = "testing"
+vpc_id  = "vpc-0123456789abcdef0"
+
 
 # Projet
 project     = "my-project"
@@ -23,50 +26,57 @@ sonarqube_ami_id = "ami-12345678"
 clickhouse_ami_id = "ami-87654321"
 
 # ECS Fargate services configuration (each service’s CPU, memory, etc.)
-ecs_services = [
-  {
-    name          = "agenticx"
+ecs_services = {
+  agenticx = {
+    name = "agenticx"
     cpu           = 256
     memory        = 512
     desired_count = 1
-    port          = 8080
-  },
-  {
-    name          = "backoffice"
+    port          = 8081
+    lifecycle_policy_path = "policies/agenticx-lifecycle.json"
+  }
+  backoffice = {
+    name = "backoffice"
     cpu           = 256
     memory        = 512
     desired_count = 1
-    port          = 8080
-  },
-  {
-    name          = "quality-control"
+    port          = 8082
+    lifecycle_policy_path = "policies/backoffice-lifecycle.json"
+  }
+  quality-control = {
+    name = "quality-control"
     cpu           = 256
     memory        = 512
     desired_count = 1
-    port          = 8080
-  },
-  {
-    name          = "keycloak"
+    port          = 8083
+    lifecycle_policy_path = "policies/quality-control-lifecycle.json"
+  }
+  keycloak = {
+    name = "keycloak"
     cpu           = 256
     memory        = 512
     desired_count = 1
-    port          = 8080
-  },
-  {
-    name          = "consul"
+    port          = 8084
+    lifecycle_policy_path = "policies/keycloak-lifecycle.json"
+  }
+  consul = {
+    name = "consul"
     cpu           = 128
     memory        = 256
     desired_count = 1
     port          = 8500
-  },
-  {
-    name          = "nextjs"
+    lifecycle_policy_path = "policies/consul-lifecycle.json"
+  }
+  nextjs = {
+    name = "nextjs"
     cpu           = 256
     memory        = 512
     desired_count = 1
-    port          = 8080
+    port          = 8085
+    lifecycle_policy_path = "policies/nextjs-lifecycle.json"
   }
-]
+}
+
 
 # ALB target for API Gateway
 alb_dns_name = "alb-dev.myproject.local" # Replace with actual dev ALB DNS

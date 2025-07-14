@@ -1,4 +1,4 @@
-terraform { 
+terraform {
   backend "s3" {
     bucket         = "terraform-state-bucket-test-v1"
     key            = "my-project/terraform.tfstate"

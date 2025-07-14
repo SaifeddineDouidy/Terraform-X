@@ -15,12 +15,12 @@ module "network" {
 }
 
 module "compute" {
-  source               = "../../modules/compute"
-  vpc_id               = module.network.vpc_id
-  subnet_ids           = module.network.public_subnet_ids
-  instance_type        = module.variables.instance_type
-  ami_id               = data.aws_ami.ubuntu.id
-  name_prefix          = local.environment_mapped
+  source        = "../../modules/compute"
+  vpc_id        = module.network.vpc_id
+  subnet_ids    = module.network.public_subnet_ids
+  instance_type = module.variables.instance_type
+  ami_id        = data.aws_ami.ubuntu.id
+  name_prefix   = local.environment_mapped
 
 }
 
@@ -41,29 +41,40 @@ module "database" {
 
 }
 
+data "local_file" "ecr_policies" {
+  for_each = var.ecs_services
+  filename = "${path.root}/${each.value.lifecycle_policy_path}"
+}
+
 module "ecr" {
-  source           = "../../modules/ecr"
-  for_each         = { for svc in var.ecs_services : svc.name => svc }
-  repository_name = each.key
-  lifecycle_policy = var.lifecycle_policy
+  source = "../../modules/ecr"
+
+  repositories = {
+    for svc in var.ecs_services : svc.name => {
+      lifecycle_policy_path    = svc.lifecycle_policy_path
+      lifecycle_policy_content = data.local_file.ecr_policies[svc.name].content
+    }
+  }
+
   tags = local.common_tags
 }
 
 module "ecs" {
-  source = "../../modules/ecs_fargate"
+  source             = "../../modules/ecs_fargate"
   security_group_ids = [module.network.ecs_sg_id]
   cluster_name       = "${local.environment_mapped}-${var.project}-cluster"
   subnet_ids         = module.network.private_subnet_ids
-  aws_region    = var.aws_region
+  aws_region         = var.aws_region
 
   services = { for svc in var.ecs_services :
     svc.name => {
-      cpu        = svc.cpu
-      memory     = svc.memory
-      desired    = svc.desired_count
-      port       = svc.port
-      image_url  = module.ecr[svc.name].repository_url
-      env        = { ENV = local.environment_mapped }
+      cpu       = svc.cpu
+      memory    = svc.memory
+      desired   = svc.desired_count
+      port      = svc.port
+      image_url = module.ecr.repository_urls[svc.name]
+
+      env = { ENV = local.environment_mapped }
     }
   }
 
@@ -74,11 +85,11 @@ module "ecs" {
 }
 
 module "alb" {
-  source             = "../../modules/alb"
-  name_prefix        = local.environment_mapped
-  vpc_id             = module.network.vpc_id
-  public_subnet_ids  = module.network.public_subnet_ids
-  security_group_id  = module.network.alb_sg_id
+  source            = "../../modules/alb"
+  name_prefix       = local.environment_mapped
+  vpc_id            = module.network.vpc_id
+  public_subnet_ids = module.network.public_subnet_ids
+  security_group_id = module.network.alb_sg_id
   services = {
     for svc in var.ecs_services : svc.name => {
       port = svc.port
@@ -102,7 +113,6 @@ module "api_gateway" {
 }
 
 module "sonarqube" {
-  count         = local.environment_mapped == "Dev" ? 1 : 0
   source        = "../../modules/sonarqube"
   ami_id        = var.sonarqube_ami_id
   instance_type = "t4g.small"
@@ -113,7 +123,6 @@ module "sonarqube" {
 }
 
 module "clickhouse" {
-  count         = local.environment_mapped == "Dev" ? 1 : 0
   source        = "../../modules/clickhouse"
   ami_id        = var.clickhouse_ami_id
   vpc_id        = module.network.vpc_id

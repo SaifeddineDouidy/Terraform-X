@@ -1,31 +1,31 @@
 variable "project" {
   description = "Project name for tagging"
-  type = string
+  type        = string
 }
 
 variable "service" {
   description = "Service name for tagging"
-  type = string
+  type        = string
 }
 variable "environment" {
   description = "The deployment environment (e.g., develop, uat, preprod, prod)."
-  type = string
+  type        = string
 }
 
 variable "size" {
   description = "The infrastructure size (e.g., small, medium, large)."
-  type = string
+  type        = string
 }
 
 variable "ssh_key_name" {
   description = "Key pair name for SSH (for EC2 instances)"
-  type = string
+  type        = string
 }
 
 variable "allowed_ssh_cidr" {
   description = "List of CIDRs allowed to SSH into instances (set narrowly for prod)"
-  type = list(string)
-  default = ["0.0.0.0/0"] # Change this to a more restrictive CIDR in production
+  type        = list(string)
+  default     = ["0.0.0.0/0"] # Change this to a more restrictive CIDR in production
 }
 
 variable "workspace_to_environment_tag_map" {
@@ -41,27 +41,27 @@ variable "workspace_to_environment_tag_map" {
 variable "environment_to_size_map" {
   type = map(string)
   default = {
-    "Dev"   = "small"
-    "Uat" = "small"
-    "Prod"  = "large"
+    "Dev"     = "small"
+    "Uat"     = "small"
+    "Prod"    = "large"
     "Preprod" = "large"
   }
 }
 
 variable "workspace_to_size_map" {
-  type = map(string)
+  type    = map(string)
   default = { develop = "small" }
 }
 
 variable "vpc_id" {
-  type = number
+  type        = string
   description = "VPC ID where resources will be created"
 }
 
 variable "aws_region" {
   type        = string
   description = "AWS region"
-  default = "us-east-1"
+  default     = "us-east-1"
 }
 
 variable "vpc_cidr" {}
@@ -70,8 +70,8 @@ variable "public_subnet_cidrs" {
   type = list(string)
 }
 
-variable "private_subnet_cidrs" { 
-  type = list(string) 
+variable "private_subnet_cidrs" {
+  type = list(string)
 }
 
 variable "sonarqube_ami_id" {
@@ -96,11 +96,16 @@ variable "lifecycle_policy" {
 }
 
 variable "ecs_services" {
-  type = list(object({
-    name          = string
-    cpu           = number
-    memory        = number
-    desired_count = number
-    port          = number
+  type = map(object({
+    name                  = string
+    cpu                   = number
+    memory                = number
+    desired_count         = number
+    port                  = number
+    lifecycle_policy_path = string
   }))
+}
+variable "alb_dns_name" {
+  type        = string
+  description = "DNS name of the ALB to attach to"
 }
