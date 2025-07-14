@@ -1,9 +1,14 @@
-variable "repository_names" {
-  type        = list(string)
-  description = "List of ECR repository names to create"
+variable "repository_name" {
+  type        = string
+  description = "Name of the ECR repository to create"
 }
 
 variable "lifecycle_policy" {
   type        = string
-  description = "JSON string for the ECR lifecycle policy"
+  description = "JSON lifecycle policy for the ECR repository"
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Tags to apply to the repository"
 }

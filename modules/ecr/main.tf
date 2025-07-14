@@ -1,10 +1,14 @@
 resource "aws_ecr_repository" "this" {
-  for_each = toset(var.repository_names)
-  name     = each.value
+  name                 = var.repository_name
+  image_tag_mutability = "MUTABLE"
+  tags                = var.tags
 }
 
 resource "aws_ecr_lifecycle_policy" "this" {
-  for_each   = toset(var.repository_names)
-  repository = each.value
+  repository = aws_ecr_repository.this.name
   policy     = var.lifecycle_policy
+}
+
+output "repository_url" {
+  value = aws_ecr_repository.this.repository_url
 }

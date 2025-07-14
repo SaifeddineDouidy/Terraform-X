@@ -1,3 +1,7 @@
+variable "vpc_id" {
+  description = "The ID of the VPC where security groups will be created"
+  type        = string
+}
 variable "vpc_cidr" {
   description = "CIDR block for the VPC (e.g., 10.0.0.0/16)."
   type        = string
@@ -8,7 +12,18 @@ variable "public_subnet_cidrs" {
   type        = list(string)
 }
 
+variable "private_subnet_cidrs"{
+  description = "List of CIDR blocks for private subnets."
+  type        = list(string)
+}
+
 variable "name_prefix" {
   description = "Prefix for naming AWS resources (e.g., environment or project name)."
   type        = string
+}
+
+variable "tags" {
+  description = "A map of tags to assign to the resources."
+  type        = map(string)
+  default     = {}
 }
