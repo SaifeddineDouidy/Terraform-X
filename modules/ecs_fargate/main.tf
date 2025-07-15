@@ -3,6 +3,19 @@ resource "aws_ecs_cluster" "this" {
   tags = var.tags
 }
 
+resource "aws_cloudwatch_log_group" "ecs_service_logs" {
+  for_each = var.services
+  name     = "/ecs/${each.key}"
+  retention_in_days = 30 # Adjust retention as needed
+  tags     = var.tags
+}
+
+resource "aws_cloudwatch_log_group" "xray_daemon_logs" {
+  count = var.xray_enabled ? 1 : 0
+  name  = "/ecs/xray-daemon"
+  retention_in_days = 30 # Adjust retention as needed
+  tags  = var.tags
+}
 
 resource "aws_ecs_service" "this" {
   for_each = aws_ecs_task_definition.svc
@@ -30,26 +43,53 @@ resource "aws_ecs_task_definition" "svc" {
   execution_role_arn       = var.execution_role_arn
   task_role_arn            = var.task_role_arn
 
-  container_definitions = jsonencode([
-    {
-      name        = each.key
-      image       = each.value.image_url
-      cpu         = each.value.cpu
-      memory      = each.value.memory
-      portMappings = [{ containerPort = each.value.port, hostPort = each.value.port }]
-      environment = [
-        for k, v in each.value.env : { name = k, value = v }
-      ]
-      essential   = true
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = "/ecs/${each.key}"
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = each.key
+  container_definitions = jsonencode(
+    concat(
+      [
+        {
+          name      = each.key
+          image     = each.value.image_url
+          cpu       = each.value.cpu
+          memory    = each.value.memory
+          portMappings = [{ containerPort = each.value.port, hostPort = each.value.port }]
+          environment = [
+            for k, v in each.value.env : { name = k, value = v }
+          ]
+          secrets = [
+            for k, v in each.value.secrets : { name = k, valueFrom = v }
+          ]
+          essential   = true
+          logConfiguration = {
+            logDriver = "awslogs"
+            options = {
+              "awslogs-group"         = "/ecs/${each.key}"
+              "awslogs-region"        = var.aws_region
+              "awslogs-stream-prefix" = each.key
+            }
+          }
         }
-      }
-    }
-  ])
+      ],
+      var.xray_enabled ? [
+        {
+          name      = "xray-daemon"
+          image     = "amazon/aws-xray-daemon:3.x"
+          cpu       = 32
+          memory    = 256
+          essential = true
+          portMappings = [
+            { containerPort = 2000, protocol = "udp" }
+          ]
+          logConfiguration = {
+            logDriver = "awslogs"
+            options = {
+              "awslogs-group"         = "/ecs/xray-daemon"
+              "awslogs-region"        = var.aws_region
+              "awslogs-stream-prefix" = "xray-daemon"
+            }
+          }
+        }
+      ] : []
+    )
+  )
 }
 

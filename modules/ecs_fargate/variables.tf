@@ -19,12 +19,19 @@ variable "services" {
     port        = number
     image_url   = string
     env         = map(string)
+    secrets     = map(string)
   }))
 }
 
 variable "execution_role_arn" {
   description = "The ARN of the ECS task execution role"
   type        = string
+}
+
+variable "xray_enabled" {
+  description = "Whether to enable the X-Ray sidecar container."
+  type        = bool
+  default     = false
 }
 # Add your variable declarations here
 

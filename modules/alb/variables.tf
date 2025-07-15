@@ -9,3 +9,15 @@ variable "services" {
     port = number
   }))
 }
+
+variable "certificate_arn" {
+  description = "The ARN of the ACM certificate for the HTTPS listener."
+  type        = string
+  default     = ""
+}
+
+variable "enable_https" {
+  description = "Whether to enable the HTTPS listener and redirect HTTP traffic."
+  type        = bool
+  default     = false
+}

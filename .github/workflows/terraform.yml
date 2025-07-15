@@ -1,0 +1,83 @@
+name: Terraform CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  AWS_REGION: us-east-1 # Default AWS region, adjust if needed
+
+jobs:
+  terraform:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.1 # Specify your Terraform version
+
+      # AWS Credentials
+      # Configure the secrets in your github repository settings.
+      # - name: Configure AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+        working-directory: live/my-project
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: live/my-project
+        # For a real backend (like S3), you would need AWS credentials for this step.
+        # Since you don't have an AWS account, this might fail if the backend is configured.
+        # If it fails, you might need to temporarily comment out the backend block in backend.tf
+        # or mock the backend for local testing.
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: live/my-project
+
+      - name: List Environments and Plan
+        run: |
+          # Define the environments to iterate through
+          ENVS=("develop" "uat" "preprod" "prod")
+
+          for ENV in "${ENVS[@]}"; do
+            echo "--- Processing environment: $ENV ---"
+            
+            # Select or create the Terraform workspace for the environment
+            # This command requires a configured backend (e.g., S3) to store workspace state.
+            # If you don't have an AWS account, this step might fail.
+            # For local testing without a backend, you might skip workspace management.
+            # terraform -chdir=live/my-project workspace select $ENV || terraform -chdir=live/my-project workspace new $ENV
+
+            # Terraform Plan for the current environment
+            # This command generates an execution plan.
+            # It will show what changes Terraform will make without actually applying them.
+            # The -var-file flag points to the environment-specific variable file.
+            terraform -chdir=live/my-project plan -var-file=env/$ENV.tfvars -out=$ENV.tfplan
+
+            # Apply the Terraform changes for the current environment
+            # This command applies the changes defined in the plan.
+            # THIS IS THE COMMAND THAT DEPLOYS YOUR INFRASTRUCTURE.
+            # It is commented out as per your request because you don't have an AWS account yet.
+            # To deploy, uncomment the line below and ensure AWS credentials are configured.
+            # terraform -chdir=live/my-project apply "$ENV.tfplan"
+
+            echo "--- Finished planning for environment: $ENV ---"
+            echo ""
+          done

@@ -103,9 +103,49 @@ variable "ecs_services" {
     desired_count         = number
     port                  = number
     lifecycle_policy_path = string
+    secrets               = map(string)
   }))
 }
 variable "alb_dns_name" {
   type        = string
   description = "DNS name of the ALB to attach to"
+}
+
+variable "db_name" {
+  description = "The name of the database to create in the RDS instance."
+  type        = string
+}
+
+variable "db_username" {
+  description = "The master username for the RDS database."
+  type        = string
+}
+
+variable "db_password" {
+  description = "The master password for the RDS database."
+  type        = string
+  sensitive   = true
+}
+
+variable "domain_name" {
+  description = "The domain name for the application."
+  type        = string
+  default     = ""
+}
+
+variable "rds_multi_az_enabled" {
+  description = "Whether to enable Multi-AZ deployment for the RDS instance in this environment."
+  type        = bool
+  default     = false
+}
+
+variable "docdb_master_username" {
+  description = "The master username for the DocumentDB cluster."
+  type        = string
+}
+
+variable "docdb_master_password" {
+  description = "The master password for the DocumentDB cluster."
+  type        = string
+  sensitive   = true
 }

@@ -13,6 +13,12 @@ variable "instance_type" {
   type        = string
 }
 
+variable "allowed_ssh_cidr" {
+  description = "List of CIDR blocks allowed to SSH to the instances."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "ami_id" {
   description = "AMI ID to use for the EC2 instance."
   type        = string

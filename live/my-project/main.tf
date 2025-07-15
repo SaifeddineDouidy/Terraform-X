@@ -15,30 +15,13 @@ module "network" {
 }
 
 module "compute" {
-  source        = "../../modules/compute"
-  vpc_id        = module.network.vpc_id
-  subnet_ids    = module.network.public_subnet_ids
-  instance_type = module.variables.instance_type
-  ami_id        = data.aws_ami.ubuntu.id
-  name_prefix   = local.environment_mapped
-
-}
-
-module "kubernetes" {
-  source        = "../../modules/kubernetes"
-  subnet_ids    = module.network.public_subnet_ids
-  instance_type = module.variables.instance_type
-  node_count    = module.variables.node_count
-  name_prefix   = local.environment_mapped
-
-}
-
-module "database" {
-  source         = "../../modules/database"
-  read_capacity  = module.variables.dynamodb_read_capacity
-  write_capacity = module.variables.dynamodb_write_capacity
-  name_prefix    = local.environment_mapped
-
+  source           = "../../modules/compute"
+  vpc_id           = module.network.vpc_id
+  subnet_ids       = module.network.public_subnet_ids
+  instance_type    = module.variables.instance_type
+  ami_id           = data.aws_ami.ubuntu.id
+  name_prefix      = local.environment_mapped
+  allowed_ssh_cidr = var.allowed_ssh_cidr
 }
 
 data "local_file" "ecr_policies" {
@@ -75,13 +58,47 @@ module "ecs" {
       image_url = module.ecr.repository_urls[svc.name]
 
       env = { ENV = local.environment_mapped }
+      secrets = {
+        DB_PASSWORD = aws_secretsmanager_secret.rds_password.arn
+      }
     }
   }
 
   execution_role_arn = module.iam.ecs_execution_role_arn
   task_role_arn      = module.iam.ecs_task_role_arn
 
-  tags = local.common_tags
+  tags         = local.common_tags
+  xray_enabled = true
+}
+
+module "xray" {
+  source      = "../../modules/xray"
+  name_prefix = local.environment_mapped
+  tags        = local.common_tags
+}
+
+module "rds" {
+  source             = "../../modules/rds"
+  name_prefix        = local.environment_mapped
+  vpc_id             = module.network.vpc_id
+  subnet_ids         = module.network.private_subnet_ids
+  security_group_ids = [module.network.rds_sg_id]
+  db_name            = var.db_name
+  db_username        = var.db_username
+  db_password        = var.db_password
+  multi_az_enabled   = var.rds_multi_az_enabled
+  tags               = local.common_tags
+}
+
+module "documentdb" {
+  source             = "../../modules/documentdb"
+  name_prefix        = local.environment_mapped
+  vpc_id             = module.network.vpc_id
+  subnet_ids         = module.network.private_subnet_ids
+  security_group_ids = [module.network.docdb_sg_id]
+  master_username    = var.docdb_master_username
+  master_password    = var.docdb_master_password
+  tags               = local.common_tags
 }
 
 module "alb" {
@@ -90,6 +107,8 @@ module "alb" {
   vpc_id            = module.network.vpc_id
   public_subnet_ids = module.network.public_subnet_ids
   security_group_id = module.network.alb_sg_id
+  certificate_arn   = length(aws_acm_certificate.this) > 0 ? aws_acm_certificate.this[0].arn : ""
+  enable_https      = var.domain_name != ""
   services = {
     for svc in var.ecs_services : svc.name => {
       port = svc.port
@@ -110,6 +129,49 @@ module "api_gateway" {
   }
 
   tags = local.common_tags
+}
+
+resource "aws_acm_certificate" "this" {
+  count             = var.domain_name == "" ? 0 : 1
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_secretsmanager_secret" "rds_password" {
+  name = "${local.environment_mapped}/rds/password"
+  tags = local.common_tags
+}
+
+resource "aws_secretsmanager_secret_version" "rds_password" {
+  secret_id     = aws_secretsmanager_secret.rds_password.id
+  secret_string = var.db_password
+}
+
+resource "aws_secretsmanager_secret" "docdb_password" {
+  name = "${local.environment_mapped}/docdb/password"
+  tags = local.common_tags
+}
+
+resource "aws_secretsmanager_secret_version" "docdb_password" {
+  secret_id     = aws_secretsmanager_secret.docdb_password.id
+  secret_string = var.docdb_master_password
+}
+
+module "waf" {
+  source      = "../../modules/waf"
+  name_prefix = local.environment_mapped
+  tags        = local.common_tags
+}
+
+resource "aws_wafv2_web_acl_association" "this" {
+  resource_arn = module.alb.alb_arn
+  web_acl_arn  = module.waf.web_acl_arn
 }
 
 module "sonarqube" {
