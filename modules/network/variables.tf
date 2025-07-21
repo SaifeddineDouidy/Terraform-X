@@ -27,3 +27,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "single_nat_gateway" {
+  description = "If true, create a single NAT gateway. If false, create one per public subnet."
+  type        = bool
+  default     = false
+}

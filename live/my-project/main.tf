@@ -11,7 +11,7 @@ module "network" {
   private_subnet_cidrs = var.private_subnet_cidrs
   vpc_id               = var.vpc_id
   name_prefix          = local.environment_mapped
-
+  single_nat_gateway   = true
 }
 
 module "consul_server" {

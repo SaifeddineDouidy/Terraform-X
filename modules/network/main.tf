@@ -25,11 +25,11 @@ resource "aws_subnet" "public" {
 
 # NAT Gateway in each public subnet
 resource "aws_eip" "nat" {
-  count = length(var.public_subnet_cidrs)
+  count = var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)
 }
 
 resource "aws_nat_gateway" "this" {
-  count         = length(var.public_subnet_cidrs)
+  count         = var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
   tags = { Name = "${var.name_prefix}-nat-${count.index}" }
