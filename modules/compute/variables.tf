@@ -28,3 +28,21 @@ variable "name_prefix" {
   description = "Prefix for naming EC2 and Security Group."
   type        = string
 }
+
+variable "instance_profile_role_name" {
+  description = "The name of the IAM role to associate with the instance profile."
+  type        = string
+  default     = ""
+}
+
+variable "security_group_ids" {
+  description = "Additional security group IDs to associate with the EC2 instance."
+  type        = list(string)
+  default     = []
+}
+
+variable "user_data" {
+  description = "User data script to run on instance startup."
+  type        = string
+  default     = null
+}

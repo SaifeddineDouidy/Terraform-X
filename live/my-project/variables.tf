@@ -6,6 +6,7 @@ variable "project" {
 variable "service" {
   description = "Service name for tagging"
   type        = string
+  default     = null
 }
 variable "environment" {
   description = "The deployment environment (e.g., develop, uat, preprod, prod)."
@@ -77,11 +78,13 @@ variable "private_subnet_cidrs" {
 variable "sonarqube_ami_id" {
   type        = string
   description = "AMI ID for SonarQube instance"
+  default     = null
 }
 
 variable "clickhouse_ami_id" {
   type        = string
   description = "AMI ID for ClickHouse instance"
+  default     = null
 }
 
 variable "ecr_repository_names" {
@@ -103,7 +106,6 @@ variable "ecs_services" {
     desired_count         = number
     port                  = number
     lifecycle_policy_path = string
-    secrets               = map(string)
   }))
 }
 variable "alb_dns_name" {
@@ -111,9 +113,10 @@ variable "alb_dns_name" {
   description = "DNS name of the ALB to attach to"
 }
 
-variable "db_name" {
-  description = "The name of the database to create in the RDS instance."
-  type        = string
+variable "db_names" {
+  description = "A list of database names to create within the RDS instance."
+  type        = list(string)
+  default     = []
 }
 
 variable "db_username" {
@@ -142,10 +145,17 @@ variable "rds_multi_az_enabled" {
 variable "docdb_master_username" {
   description = "The master username for the DocumentDB cluster."
   type        = string
+  default     = null
 }
 
 variable "docdb_master_password" {
   description = "The master password for the DocumentDB cluster."
   type        = string
   sensitive   = true
+  default     = null
+}
+
+variable "rds_backup_s3_bucket_name" {
+  description = "Name of the S3 bucket for RDS backups."
+  type        = string
 }

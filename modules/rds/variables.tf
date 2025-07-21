@@ -42,9 +42,10 @@ variable "engine_version" {
   default     = "13.7"
 }
 
-variable "db_name" {
-  description = "The name of the initial database to create."
-  type        = string
+variable "db_names" {
+  description = "A list of database names to create within the RDS instance."
+  type        = list(string)
+  default     = []
 }
 
 variable "db_username" {
@@ -68,4 +69,9 @@ variable "tags" {
   description = "A map of tags to assign to the resources."
   type        = map(string)
   default     = {}
+}
+
+variable "rds_backup_s3_bucket_name" {
+  description = "Name of the S3 bucket for RDS backups."
+  type        = string
 }

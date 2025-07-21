@@ -16,7 +16,6 @@ resource "aws_db_instance" "this" {
   allocated_storage    = var.allocated_storage
   engine               = var.engine
   engine_version       = var.engine_version
-  db_name              = var.db_name
   username             = var.db_username
   password             = var.db_password
   db_subnet_group_name = aws_db_subnet_group.this.name
@@ -24,5 +23,21 @@ resource "aws_db_instance" "this" {
   multi_az             = var.multi_az_enabled
   skip_final_snapshot  = true
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"] # Example log types, adjust as needed
-  tags                 = var.tags
+  tags = var.tags
+}
+
+resource "aws_s3_bucket_versioning" "rds_backup_bucket_versioning" {
+  bucket = aws_s3_bucket.rds_backup_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+
+resource "aws_s3_bucket" "rds_backup_bucket" {
+  bucket = var.rds_backup_s3_bucket_name
+  acl    = "private" # Or "log-delivery-write" if using for logs
+
+
+  tags = var.tags
 }

@@ -7,12 +7,12 @@ output "public_subnet_ids" {
 }
 
 output "instance_id" {
-  value = module.compute.instance_id
+  value = module.consul_server.instance_id
 }
 
 output "rds_instance_endpoint" {
   description = "The connection endpoint for the RDS instance."
-  value       = module.rds.db_instance_endpoint
+  value       = module.rds.db_endpoint
 }
 
 output "rds_instance_port" {
@@ -20,6 +20,7 @@ output "rds_instance_port" {
   value       = module.rds.db_instance_port
 }
 
+/*
 output "docdb_cluster_endpoint" {
   description = "The connection endpoint for the DocumentDB cluster."
   value       = module.documentdb.cluster_endpoint
@@ -29,6 +30,7 @@ output "docdb_cluster_port" {
   description = "The port on which the DocumentDB cluster is listening."
   value       = module.documentdb.cluster_port
 }
+*/
 
 /*output "eks_cluster_endpoint" {
   value = module.kubernetes.cluster_endpoint
@@ -42,6 +44,7 @@ output "ecr_repository_urls" {
   value = module.ecr.repository_urls
 }
 
+/*
 output "sonarqube_instance_id" {
   value = module.sonarqube.instance_id
 }
@@ -57,6 +60,7 @@ output "sonarqube_url" {
 output "clickhouse_url" {
   value = module.clickhouse.instance_url
 }
+*/
 
 # --- Added ECS outputs ---
 
