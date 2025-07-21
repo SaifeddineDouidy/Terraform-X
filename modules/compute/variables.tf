@@ -9,7 +9,7 @@ variable "subnet_ids" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type (e.g., t2.micro)."
+  description = "EC2 instance type"
   type        = string
 }
 

@@ -18,7 +18,7 @@ module "consul_server" {
   source                     = "../../modules/compute"
   vpc_id                     = module.network.vpc_id
   subnet_ids                 = module.network.private_subnet_ids
-  instance_type              = "t2.micro" # Or a suitable instance type for Consul
+  instance_type              = "t4g.micro" # Or a suitable instance type for Consul
   ami_id                     = data.aws_ami.ubuntu.id
   name_prefix                = "${local.environment_mapped}-consul"
   allowed_ssh_cidr           = var.allowed_ssh_cidr

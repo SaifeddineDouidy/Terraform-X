@@ -26,6 +26,28 @@ resource "aws_db_instance" "this" {
   tags = var.tags
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "rds_backup_bucket_lifecycle" {
+  bucket = aws_s3_bucket.rds_backup_bucket.id
+
+  rule {
+    id     = "log"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "GLACIER"
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
 resource "aws_s3_bucket_versioning" "rds_backup_bucket_versioning" {
   bucket = aws_s3_bucket.rds_backup_bucket.id
   versioning_configuration {
