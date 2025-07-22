@@ -2,7 +2,7 @@
 resource "aws_security_group" "alb" {
   name        = "${var.name_prefix}-alb-sg"
   description = "Allow HTTPS from internet"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.this.id
 
   ingress {
     from_port   = 443
@@ -18,7 +18,7 @@ resource "aws_security_group" "alb" {
 # ECS SG
 resource "aws_security_group" "ecs" {
   name   = "${var.name_prefix}-ecs-sg"
-  vpc_id = var.vpc_id
+  vpc_id = aws_vpc.this.id
 
   # Allow from ALB on port 8080
 
@@ -48,7 +48,7 @@ resource "aws_security_group" "ecs" {
 # DocumentDB SG
 resource "aws_security_group" "docdb" {
   name   = "${var.name_prefix}-docdb-sg"
-  vpc_id = var.vpc_id
+  vpc_id = aws_vpc.this.id
 
   ingress {
     from_port       = 27017
@@ -71,7 +71,7 @@ resource "aws_security_group" "docdb" {
 # RDS SG
 resource "aws_security_group" "rds" {
   name   = "${var.name_prefix}-rds-sg"
-  vpc_id = var.vpc_id
+  vpc_id = aws_vpc.this.id
 
 
   # No outbound rules for RDS as per design
@@ -83,7 +83,7 @@ resource "aws_security_group" "rds" {
 resource "aws_security_group" "consul" {
   name        = "${var.name_prefix}-consul-sg"
   description = "Security group for Consul EC2 instances"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.this.id
 
 
   ingress {

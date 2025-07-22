@@ -13,17 +13,16 @@ variable "environment" {
   type        = string
 }
 
-variable "size" {
-  description = "The infrastructure size (e.g., small, medium, large)."
-  type        = string
-}
+# variable "size" {
+#   description = "The infrastructure size (e.g., small, medium, large)."
+#   type        = string
+# }
 
-
-variable "allowed_ssh_cidr" {
-  description = "List of CIDRs allowed to SSH into instances (set narrowly for prod)"
-  type        = list(string)
-  default     = ["0.0.0.0/0"] # Change this to a more restrictive CIDR in production
-}
+# variable "allowed_ssh_cidr" {
+#   description = "List of CIDRs allowed to SSH into instances (set narrowly for prod)"
+#   type        = list(string)
+#   default     = ["0.0.0.0/0"] # Change this to a more restrictive CIDR in production
+# }
 
 variable "workspace_to_environment_tag_map" {
   type = map(string)
@@ -50,10 +49,6 @@ variable "workspace_to_size_map" {
   default = { develop = "small" }
 }
 
-variable "vpc_id" {
-  type        = string
-  description = "VPC ID where resources will be created"
-}
 
 variable "aws_region" {
   type        = string
@@ -118,11 +113,6 @@ variable "db_username" {
   type        = string
 }
 
-variable "db_password" {
-  description = "The master password for the RDS database."
-  type        = string
-  sensitive   = true
-}
 
 variable "domain_name" {
   description = "The domain name for the application."
@@ -141,11 +131,6 @@ variable "keycloak_db_username" {
   type        = string
 }
 
-variable "keycloak_db_password" {
-  description = "Master password for the centralized Keycloak RDS database."
-  type        = string
-  sensitive   = true
-}
 
 variable "docdb_master_username" {
   description = "The master username for the DocumentDB cluster."

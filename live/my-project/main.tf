@@ -1,15 +1,14 @@
-module "variables" {
-  source      = "../../modules/variables"
-  environment = var.environment
-  size        = var.size
-}
+# module "variables" {
+#   source      = "../../modules/variables"
+#   environment = var.environment
+#   size        = var.size
+# }
 
 module "network" {
   source               = "../../modules/network"
   vpc_cidr             = var.vpc_cidr
   public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
-  vpc_id               = var.vpc_id
   name_prefix          = local.environment_mapped
   single_nat_gateway   = true
 }
@@ -84,7 +83,7 @@ module "rds" {
   security_group_ids        = [module.network.rds_sg_id]
   db_names                  = var.db_names
   db_username               = var.db_username
-  db_password               = var.db_password
+  db_password               = random_password.rds_password.result
   multi_az_enabled          = var.rds_multi_az_enabled
   tags                      = local.common_tags
   rds_backup_s3_bucket_name = var.rds_backup_s3_bucket_name
@@ -133,22 +132,58 @@ resource "aws_acm_certificate" "this" {
 resource "aws_secretsmanager_secret" "rds_password" {
   name = "${local.environment_mapped}/rds/password"
   tags = local.common_tags
+
+  recovery_window_in_days = 0 # Set to 0 to allow immediate deletion for dev environments
 }
 
 resource "aws_secretsmanager_secret_version" "rds_password" {
   secret_id     = aws_secretsmanager_secret.rds_password.id
-  secret_string = var.db_password
+  secret_string = random_password.rds_password.result
 }
 
-resource "aws_secretsmanager_secret" "docdb_password" {
-  name = "${local.environment_mapped}/docdb/password"
+resource "random_password" "rds_password" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
+}
+
+resource "aws_secretsmanager_secret_rotation" "rds_password_rotation" {
+  secret_id           = aws_secretsmanager_secret.rds_password.id
+  rotation_lambda_arn = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:aws-secretsmanager-rds-secret-rotation-lambda" # Placeholder ARN, needs to be updated with the actual ARN of the rotation lambda
+
+  rotation_rules {
+    automatically_after_days = 30
+  }
+}
+
+resource "aws_secretsmanager_secret" "keycloak_db_password" {
+  name = "${local.environment_mapped}/keycloak/db/password"
   tags = local.common_tags
+
+  recovery_window_in_days = 0
 }
 
-resource "aws_secretsmanager_secret_version" "docdb_password" {
-  secret_id     = aws_secretsmanager_secret.docdb_password.id
-  secret_string = var.docdb_master_password
+resource "aws_secretsmanager_secret_version" "keycloak_db_password" {
+  secret_id     = aws_secretsmanager_secret.keycloak_db_password.id
+  secret_string = random_password.keycloak_db_password.result
 }
+
+resource "random_password" "keycloak_db_password" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
+}
+
+resource "aws_secretsmanager_secret_rotation" "keycloak_db_password_rotation" {
+  secret_id           = aws_secretsmanager_secret.keycloak_db_password.id
+  rotation_lambda_arn = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:aws-secretsmanager-rds-secret-rotation-lambda" # Placeholder ARN
+
+  rotation_rules {
+    automatically_after_days = 30
+  }
+}
+
+data "aws_caller_identity" "current" {}
 
 module "waf" {
   source      = "../../modules/waf"
@@ -189,14 +224,15 @@ module "iam" {
   rds_backup_s3_bucket_name = var.rds_backup_s3_bucket_name
 }
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-  }
-  owners = ["099720109477"]
-}
+# data "aws_ami" "ubuntu" {
+#   most_recent = true
+#   filter {
+#     name   = "name"
+#     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+#   }
+#   owners = ["099720109477"] # Canonical
+# }
+
 provider "postgresql" {
   host            = module.rds.db_endpoint
   port            = module.rds.db_instance_port
@@ -236,15 +272,15 @@ module "keycloak" {
   aws_region             = var.aws_region
   domain_name            = var.domain_name
   db_username            = var.keycloak_db_username
-  db_password            = var.keycloak_db_password
+  db_password            = random_password.keycloak_db_password.result
   db_endpoint            = module.keycloak.keycloak_rds_endpoint
 }
 
-data "aws_ami" "amazon_linux_2" {
-  most_recent = true
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
-  owners = ["amazon"]
-}
+# data "aws_ami" "amazon_linux_2" {
+#   most_recent = true
+#   filter {
+#     name   = "name"
+#     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+#   }
+#   owners = ["amazon"]
+# }

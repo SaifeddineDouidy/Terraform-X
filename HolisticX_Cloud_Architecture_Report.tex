@@ -14,7 +14,7 @@
 
 \setstretch{1.2}
 
-\title{\textbf{HolisticX Cloud Architecture}}
+\title{\textbf{HolisticX Cloud Architecture (Revised)}}
 \author{Saifeddine Douidy / ToumAI}
 \date{\today}
 
@@ -26,11 +26,11 @@
 
 \section{Overall Architecture Review}
 
-The architecture is a modern microservices-based system built for scalability, resilience, and security on AWS. It follows a layered design consisting of a secure network layer, a container-based application layer, a managed data layer, and a robust edge layer for handling incoming requests. A key update is the centralization of the Keycloak identity provider on a dedicated, highly available Fargate cluster.
+The architecture is a modern microservices-based system built for scalability, resilience, and security on AWS. It follows a layered design consisting of a secure network layer, a container-based application layer, a managed data layer, and a robust edge layer for handling incoming requests. Key updates include the centralization of the Keycloak identity provider on a dedicated, highly available Fargate cluster, the removal of the redundant API Gateway, and the implementation of automated secret management with AWS Secrets Manager.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{overall_architecture.png} % Placeholder for a new diagram
+    \includegraphics[width=0.9\textwidth]{architecture.png} % Placeholder for a new diagram
     \caption{Overall Architecture}
 \end{figure}
 
@@ -83,9 +83,9 @@ All ECS Fargate tasks are configured to use \textbf{Graviton (ARM64)} processors
 \begin{itemize}
     \item \textbf{Application Data:} Managed via a PostgreSQL RDS instance located in the general-purpose private subnets and accessible only to authorized ECS tasks.
     \item \textbf{Keycloak Data:} Managed via a \textbf{dedicated PostgreSQL RDS instance} located in the Keycloak private subnets, accessible only by the Keycloak Fargate tasks. This ensures strict isolation of identity data.
-    \item \textbf{Secrets Management:} Database access credentials and other sensitive information are securely stored and retrieved using AWS Secrets Manager. Terraform automates the creation and initial population of these secrets.
+    \item \textbf{Secrets Management:} Database access credentials and other sensitive information are securely stored and retrieved using AWS Secrets Manager. Terraform automates the creation, initial population, and \textbf{automated rotation} of these secrets, eliminating the need for plaintext passwords in configuration files.
     \item \textbf{S3 Cost Optimization:} RDS backup S3 buckets are configured with lifecycle policies to transition older data to Glacier and to abort incomplete multipart uploads, reducing storage costs.
-    \item \textbf{Observability:} Achieved with AWS X-Ray, integrated via the \texttt{xray-daemon} running as a sidecar container alongside each service, allowing tracing requests through the entire system. CloudWatch is configured to collect logs from ECS tasks and databases for centralized monitoring and troubleshooting.
+    \item \textbf{Observability:} Achieved with AWS X-Ray, integrated via the \texttt{xray-daemon} running as a sidecar container alongside each service, allowing tracing requests through the entire system. CloudWatch is configured to collect logs from ECS tasks and databases for centralized monitoring and troubleshooting, with a \textbf{30-day retention period} to optimize costs.
 \end{itemize}
 
 \section{Communication and Request Flow}
@@ -106,7 +106,7 @@ The communication flow starts when a user sends a request to the system.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{user_request_flow.png} % Placeholder for a new diagram
+    \includegraphics[width=1.1\textwidth]{user_scenario_1.png} % Placeholder for a new diagram
     \caption{User Request Flow Diagram}
 \end{figure}
 
@@ -125,7 +125,7 @@ The communication flow starts when a user sends a request to the system.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{keycloak_login_flow.png} % Placeholder for a new diagram
+    \includegraphics[width=0.9\textwidth]{user_scenario_2.png} % Placeholder for a new diagram
     \caption{Keycloak Login Flow Diagram}
 \end{figure}
 
