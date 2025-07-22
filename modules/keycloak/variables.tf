@@ -88,7 +88,7 @@ variable "db_engine_version" {
 variable "db_instance_type" {
   description = "RDS instance type for Keycloak database."
   type        = string
-  default     = "db.t4g.medium" # Example instance type
+  default     = "db.t4g.small" # Example instance type
 }
 
 variable "db_allocated_storage" {

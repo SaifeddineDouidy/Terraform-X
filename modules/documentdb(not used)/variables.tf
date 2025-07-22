@@ -21,7 +21,7 @@ variable "security_group_ids" {
 variable "instance_class" {
   description = "The instance class for the DocumentDB instances."
   type        = string
-  default     = "db.t4g.medium" # Default to a T4g instance type
+  default     = "db.t4g.small" # Default to a T4g instance type
 }
 
 variable "instance_count" {
