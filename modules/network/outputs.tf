@@ -10,6 +10,14 @@ output "private_subnet_ids" {
   value = aws_subnet.private[*].id 
 }
 
+output "keycloak_public_subnet_ids" {
+  value = aws_subnet.keycloak_public[*].id
+}
+
+output "keycloak_private_subnet_ids" {
+  value = aws_subnet.keycloak_private[*].id
+}
+
 output "public_route_table_id" {
   value = aws_route_table.public.id
 }

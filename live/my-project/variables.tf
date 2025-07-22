@@ -18,10 +18,6 @@ variable "size" {
   type        = string
 }
 
-variable "ssh_key_name" {
-  description = "Key pair name for SSH (for EC2 instances)"
-  type        = string
-}
 
 variable "allowed_ssh_cidr" {
   description = "List of CIDRs allowed to SSH into instances (set narrowly for prod)"
@@ -75,17 +71,19 @@ variable "private_subnet_cidrs" {
   type = list(string)
 }
 
-variable "sonarqube_ami_id" {
-  type        = string
-  description = "AMI ID for SonarQube instance"
-  default     = null
+variable "keycloak_public_subnet_cidrs" {
+  description = "List of CIDR blocks for Keycloak public subnets."
+  type        = list(string)
+  default     = []
 }
 
-variable "clickhouse_ami_id" {
-  type        = string
-  description = "AMI ID for ClickHouse instance"
-  default     = null
+variable "keycloak_private_subnet_cidrs" {
+  description = "List of CIDR blocks for Keycloak private subnets."
+  type        = list(string)
+  default     = []
 }
+
+
 
 variable "ecr_repository_names" {
   type        = list(string)
@@ -107,10 +105,6 @@ variable "ecs_services" {
     port                  = number
     lifecycle_policy_path = string
   }))
-}
-variable "alb_dns_name" {
-  type        = string
-  description = "DNS name of the ALB to attach to"
 }
 
 variable "db_names" {
@@ -140,6 +134,17 @@ variable "rds_multi_az_enabled" {
   description = "Whether to enable Multi-AZ deployment for the RDS instance in this environment."
   type        = bool
   default     = false
+}
+
+variable "keycloak_db_username" {
+  description = "Master username for the centralized Keycloak RDS database."
+  type        = string
+}
+
+variable "keycloak_db_password" {
+  description = "Master password for the centralized Keycloak RDS database."
+  type        = string
+  sensitive   = true
 }
 
 variable "docdb_master_username" {

@@ -17,6 +17,18 @@ variable "private_subnet_cidrs"{
   type        = list(string)
 }
 
+variable "keycloak_public_subnet_cidrs" {
+  description = "List of CIDR blocks for Keycloak public subnets."
+  type        = list(string)
+  default     = []
+}
+
+variable "keycloak_private_subnet_cidrs" {
+  description = "List of CIDR blocks for Keycloak private subnets."
+  type        = list(string)
+  default     = []
+}
+
 variable "name_prefix" {
   description = "Prefix for naming AWS resources (e.g., environment or project name)."
   type        = string

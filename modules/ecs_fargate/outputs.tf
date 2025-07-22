@@ -1,5 +1,6 @@
 output "cluster_id"   { value = aws_ecs_cluster.this.id }
-output "service_names" {
-  description = "Map of ECS service names by key"
-  value       = { for k, s in aws_ecs_service.this : k => s.name }
+
+output "cloud_map_namespace_name" {
+  description = "The name of the Cloud Map private DNS namespace."
+  value       = aws_service_discovery_private_dns_namespace.this.name
 }

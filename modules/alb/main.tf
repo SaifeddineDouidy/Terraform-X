@@ -61,30 +61,7 @@ resource "aws_lb_listener" "https" {
   certificate_arn   = var.certificate_arn
 
   default_action {
-    type = "fixed-response"
-
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "Not found"
-      status_code  = "404"
-    }
-  }
-}
-
-resource "aws_lb_listener_rule" "routes" {
-  for_each = var.services
-
-  listener_arn = var.enable_https ? aws_lb_listener.https[0].arn : aws_lb_listener.http.arn
-  priority     = 100 + index(keys(var.services), each.key)
-
-  action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.this[each.key].arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/${each.key}*"]
-    }
+    target_group_arn = aws_lb_target_group.this["spring-gateway"].arn
   }
 }

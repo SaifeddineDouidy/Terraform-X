@@ -14,23 +14,6 @@ module "network" {
   single_nat_gateway   = true
 }
 
-module "consul_server" {
-  source                     = "../../modules/compute"
-  vpc_id                     = module.network.vpc_id
-  subnet_ids                 = module.network.private_subnet_ids
-  instance_type              = "t4g.micro" # Or a suitable instance type for Consul
-  ami_id                     = data.aws_ami.ubuntu.id
-  name_prefix                = "${local.environment_mapped}-consul"
-  allowed_ssh_cidr           = var.allowed_ssh_cidr
-  instance_profile_role_name = module.iam.consul_ec2_role_name
-  security_group_ids         = [module.network.consul_sg_id]
-  user_data                  = <<-EOT
-              #!/bin/bash
-              # Install Consul
-              # (Add your Consul installation and configuration script here)
-              echo "Consul installation script placeholder" > /tmp/consul_install.log
-              EOT
-}
 
 data "local_file" "ecr_policies" {
   for_each = var.ecs_services
@@ -52,6 +35,7 @@ module "ecr" {
 
 module "ecs" {
   source             = "../../modules/ecs_fargate"
+  vpc_id             = module.network.vpc_id
   security_group_ids = [module.network.ecs_sg_id]
   cluster_name       = "${local.environment_mapped}-${var.project}-cluster"
   subnet_ids         = module.network.private_subnet_ids
@@ -66,10 +50,12 @@ module "ecs" {
       image_url = module.ecr.repository_urls[svc_name]
 
       env = {
-        ENV     = local.environment_mapped
-        DB_HOST = module.rds.db_endpoint
-        DB_PORT = module.rds.db_instance_port
-        DB_NAME = "${svc_name}_db"
+        ENV         = local.environment_mapped
+        DB_HOST     = module.rds.db_endpoint
+        DB_PORT     = module.rds.db_instance_port
+        DB_NAME     = "${svc_name}_db"
+        CONSUL_HOST = "consul.${local.environment_mapped}-${var.project}-cluster.local"
+        CONSUL_PORT = "8500"
       }
       secrets = {
         DB_PASSWORD = aws_secretsmanager_secret.rds_password.arn
@@ -124,24 +110,11 @@ module "alb" {
   certificate_arn   = length(aws_acm_certificate.this) > 0 ? aws_acm_certificate.this[0].arn : ""
   enable_https      = var.domain_name != ""
   services = {
-    for svc_name in ["keycloak", "nextjs", "spring-gateway"] : svc_name => {
-      port = var.ecs_services[svc_name].port
+    "spring-gateway" = {
+      port = var.ecs_services["spring-gateway"].port
+      path = "/*"
     }
   }
-  tags = local.common_tags
-}
-
-module "api_gateway" {
-  source = "../../modules/api_gateway"
-  name   = "${local.environment_mapped}-${var.project}-api"
-
-  routes = {
-    for svc_name in keys(var.ecs_services) : svc_name => {
-      path       = "/${svc_name}"
-      target_url = contains(["keycloak", "nextjs", "spring-gateway"], svc_name) ? "http://${module.alb.alb_dns_name}/${svc_name}" : "http://${module.alb.alb_dns_name}/spring-gateway/${svc_name}"
-    }
-  }
-
   tags = local.common_tags
 }
 
@@ -237,4 +210,40 @@ resource "postgresql_database" "app_databases" {
   for_each = toset(var.db_names)
   name     = each.value
   owner    = var.db_username
+}
+module "route53" {
+  source       = "../../modules/route53"
+  domain_name  = var.domain_name
+  subdomain    = "dev.${var.domain_name}"
+  alb_dns_name = module.keycloak.keycloak_alb_dns_name
+  alb_zone_id  = module.keycloak.keycloak_alb_zone_id
+}
+module "keycloak" {
+  source                 = "../../modules/keycloak"
+  name_prefix            = "${local.environment_mapped}-keycloak"
+  vpc_id                 = module.network.vpc_id
+  public_subnet_ids      = module.network.keycloak_public_subnet_ids
+  private_subnet_ids     = module.network.keycloak_private_subnet_ids
+  tags                   = local.common_tags
+  keycloak_port          = 8080 # Keycloak's default HTTP port
+  certificate_arn        = aws_acm_certificate.this[0].arn
+  keycloak_cpu           = 1024
+  keycloak_memory        = 2048
+  desired_count          = 2
+  ecs_execution_role_arn = module.iam.ecs_execution_role_arn
+  ecs_task_role_arn      = module.iam.ecs_task_role_arn
+  aws_region             = var.aws_region
+  domain_name            = var.domain_name
+  db_username            = var.keycloak_db_username
+  db_password            = var.keycloak_db_password
+  db_endpoint            = module.keycloak.keycloak_rds_endpoint
+}
+
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+  owners = ["amazon"]
 }

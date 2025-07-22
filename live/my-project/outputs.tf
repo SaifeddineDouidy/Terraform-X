@@ -6,9 +6,11 @@ output "public_subnet_ids" {
   value = module.network.public_subnet_ids
 }
 
+/*
 output "instance_id" {
   value = module.consul_server.instance_id
 }
+*/
 
 output "rds_instance_endpoint" {
   description = "The connection endpoint for the RDS instance."
@@ -67,4 +69,9 @@ output "clickhouse_url" {
 output "ecs_cluster_id" {
   description = "Id of the ECS cluster"
   value       = module.ecs.cluster_id
+}
+
+output "route53_nameservers" {
+  description = "The name servers for the Route 53 Hosted Zone. These must be updated at your domain registrar."
+  value       = module.route53.name_servers
 }

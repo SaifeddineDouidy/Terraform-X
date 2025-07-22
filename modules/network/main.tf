@@ -23,6 +23,22 @@ resource "aws_subnet" "public" {
   tags = { Name = "${var.name_prefix}-public-subnet-${count.index}" }
 }
 
+resource "aws_subnet" "keycloak_public" {
+  count             = length(var.keycloak_public_subnet_cidrs)
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.keycloak_public_subnet_cidrs[count.index]
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  tags = { Name = "${var.name_prefix}-keycloak-public-subnet-${count.index}" }
+}
+
+resource "aws_subnet" "keycloak_private" {
+  count      = length(var.keycloak_private_subnet_cidrs)
+  vpc_id     = aws_vpc.this.id
+  cidr_block = var.keycloak_private_subnet_cidrs[count.index]
+  tags       = { Name = "${var.name_prefix}-keycloak-private-${count.index}" }
+}
+
 # NAT Gateway in each public subnet
 resource "aws_eip" "nat" {
   count = var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)

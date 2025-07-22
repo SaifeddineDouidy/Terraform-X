@@ -1,3 +1,8 @@
+variable "vpc_id" {
+  description = "The ID of the VPC where the ECS cluster and services will be deployed."
+  type        = string
+}
+
 variable "cluster_name"       { type = string }
 variable "subnet_ids"         { type = list(string) }
 variable "security_group_ids" { type = list(string) }

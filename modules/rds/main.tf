@@ -33,6 +33,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "rds_backup_bucket_lifecycle" {
     id     = "log"
     status = "Enabled"
 
+    filter {
+    }
+
     transition {
       days          = 30
       storage_class = "GLACIER"
