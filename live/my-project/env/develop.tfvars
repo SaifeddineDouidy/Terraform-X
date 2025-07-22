@@ -88,3 +88,5 @@ rds_backup_s3_bucket_name = "my-dev-rds-backup-bucket" # Replace with your desir
 
 keycloak_db_username = "keycloakuser"
 keycloak_db_password = "CHANGE_ME_TO_A_SECURE_KEYCLOAK_PASSWORD"
+
+enable_waf = false

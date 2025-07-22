@@ -153,6 +153,12 @@ variable "docdb_master_username" {
   default     = null
 }
 
+variable "enable_waf" {
+  description = "If true, enable and associate the AWS WAF with the ALB."
+  type        = bool
+  default     = false
+}
+
 variable "docdb_master_password" {
   description = "The master password for the DocumentDB cluster."
   type        = string

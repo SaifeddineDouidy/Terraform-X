@@ -157,6 +157,7 @@ module "waf" {
 }
 
 resource "aws_wafv2_web_acl_association" "this" {
+  count        = var.enable_waf ? 1 : 0
   resource_arn = module.alb.alb_arn
   web_acl_arn  = module.waf.web_acl_arn
 }
