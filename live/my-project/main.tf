@@ -183,7 +183,7 @@ resource "aws_secretsmanager_secret_rotation" "keycloak_db_password_rotation" {
   }
 }
 
-data "aws_caller_identity" "current" {}
+# data "aws_caller_identity" "current" {}
 
 module "waf" {
   source      = "../../modules/waf"
