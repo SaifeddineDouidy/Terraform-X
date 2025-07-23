@@ -165,7 +165,7 @@ resource "aws_ecs_service" "keycloak_service" {
   launch_type     = "FARGATE"
   network_configuration {
     subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.keycloak_ecs_sg.id, aws_security_group.keycloak_rds_sg.id] # Add RDS SG here
+    security_groups  = [aws_security_group.keycloak_ecs_sg.id, var.db_security_group_id]
     assign_public_ip = false
   }
   load_balancer {

@@ -274,6 +274,7 @@ module "keycloak" {
   db_username            = var.keycloak_db_username
   db_password_secret_arn = aws_secretsmanager_secret.keycloak_db_password.arn
   db_endpoint            = module.rds.db_endpoint
+  db_security_group_id   = module.rds.db_security_group_id
 }
 
 # data "aws_ami" "amazon_linux_2" {

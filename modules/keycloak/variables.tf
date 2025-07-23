@@ -102,6 +102,11 @@ variable "db_username" {
   type        = string
 }
 
+variable "db_security_group_id" {
+  description = "The ID of the security group for the Keycloak RDS instance."
+  type        = string
+}
+
 variable "db_password_secret_arn" {
   description = "The ARN of the AWS Secrets Manager secret for the Keycloak database password."
   type        = string
