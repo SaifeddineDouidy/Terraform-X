@@ -73,7 +73,7 @@ db_username = "myuser"     # Master username for the database
 
 # ACM Certificate
 # This variable is used by the 'alb' module (modules/alb/main.tf) for HTTPS certificate.
-domain_name = "holisticx.com" # Domain name for the ACM certificate
+domain_name = "holisticx.com" 
 
 # RDS Multi-AZ
 # This variable controls whether Multi-AZ deployment is enabled for RDS.
