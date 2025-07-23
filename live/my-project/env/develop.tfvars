@@ -89,7 +89,7 @@ keycloak_db_username = "keycloakuser"
 enable_waf = false
 
 # Keycloak RDS
-keycloak_db_instance_class      = "db.t3.micro"
+keycloak_db_instance_class      = "db.t4g.micro"
 keycloak_db_allocated_storage   = 20
 keycloak_db_engine              = "postgres"
 keycloak_db_engine_version      = "13.7"

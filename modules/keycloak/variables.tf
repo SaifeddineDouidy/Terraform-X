@@ -83,7 +83,7 @@ variable "db_password_secret_arn" {
 variable "db_instance_class" {
   description = "Instance class for the Keycloak RDS instance"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t4g.micro"
 }
 
 variable "db_allocated_storage" {

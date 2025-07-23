@@ -72,7 +72,7 @@ variable "aws_region" {
 variable "keycloak_db_instance_class" {
   description = "Instance class for the Keycloak RDS instance"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t4g.micro"
 }
 
 variable "keycloak_db_allocated_storage" {
