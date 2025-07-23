@@ -1,0 +1,198 @@
+version: 0.1
+resource_usage:
+  
+  # ========================================
+  # RDS Database Instances
+  # ========================================
+  
+  # Keycloak RDS Database (Multi-AZ, db.t4g.small)
+  module.keycloak.aws_db_instance.keycloak_rds:
+    # Backup storage for dev team (much lower than default)
+    backup_storage_gb: 25  # Down from 238 GB - dev team won't generate massive backups
+    
+  # Main RDS Database (Single-AZ, db.t4g.micro)  
+  module.rds.aws_db_instance.this:
+    # Backup storage for main database
+    backup_storage_gb: 15  # Down from 238 GB - minimal backup needs for dev
+    
+  # ========================================
+  # ECS Services - Dev Team Usage
+  # ========================================
+  
+  # Keycloak ECS Service (reduced for dev workload)
+  module.keycloak.aws_ecs_service.keycloak_service:
+    vcpu: 1           # Down from 2 vCPU - sufficient for 3-5 developers
+    memory_gb: 2      # Down from 4 GB - adequate for dev workload
+    
+  # Application ECS Services (already well-sized for dev)
+  module.ecs.aws_ecs_service.this["agenticx"]:
+    vcpu: 0.25        # Appropriate for dev environment
+    memory_gb: 0.5    # Good sizing for lightweight service
+    
+  module.ecs.aws_ecs_service.this["backoffice"]:
+    vcpu: 0.25        # Good for dev usage
+    memory_gb: 0.5    # Appropriate memory allocation
+    
+  module.ecs.aws_ecs_service.this["consul"]:
+    vcpu: 0.25        # Service discovery doesn't need much
+    memory_gb: 0.5    # Sufficient for dev cluster
+    
+  module.ecs.aws_ecs_service.this["nextjs"]:
+    vcpu: 0.25        # Frontend service - good sizing
+    memory_gb: 0.5    # Adequate for dev workload
+    
+  module.ecs.aws_ecs_service.this["spring-gateway"]:
+    vcpu: 0.25        # API gateway - appropriate size
+    memory_gb: 0.5    # Good for dev traffic
+    
+  # ========================================
+  # Load Balancers - Dev Traffic Patterns
+  # ========================================
+  
+  # Main Application Load Balancer
+  module.alb.aws_lb.this:
+    # Load Balancer Capacity Units for dev team (3-5 users)
+    load_balancer_capacity_units: 0.1  # Down from 0.34 LCU - minimal dev traffic
+    
+  # Keycloak Application Load Balancer  
+  module.keycloak.aws_lb.keycloak_alb:
+    # Auth service won't have high traffic in dev
+    load_balancer_capacity_units: 0.05  # Very low - just authentication requests
+    
+  # ========================================
+  # NAT Gateway - Reduced Data Processing
+  # ========================================
+  
+  module.network.aws_nat_gateway.this[0]:
+    # Data processed through NAT (much lower for dev team)
+    monthly_data_processed_gb: 20  # Down from 111 GB - limited external API calls
+    
+  # ========================================
+  # S3 Backup Bucket - Realistic Dev Usage
+  # ========================================
+  
+  module.rds.aws_s3_bucket.rds_backup_bucket:
+    # Standard storage for backups
+    storage_gb: 50                    # Down from 225 GB - reasonable backup size
+    
+    # Data operations (much lower for dev environment)
+    monthly_select_data_returned_gb: 100     # Down from 7,250 GB - minimal data queries
+    monthly_select_data_scanned_gb: 50       # Down from 2,500 GB - limited scanning
+    
+    # API requests (realistic for dev team)
+    monthly_get_select_requests: 1000        # Down from 12.5M - way more realistic
+    monthly_put_post_requests: 200           # Down from 1M - minimal writes
+    
+  # ========================================
+  # CloudWatch Log Groups - Dev Optimized
+  # ========================================
+  
+  # ECS Service Logs - reduced logging for dev
+  module.ecs.aws_cloudwatch_log_group.ecs_service_logs["agenticx"]:
+    storage_gb: 5              # Down from 166 GB archival - short retention
+    monthly_data_ingested_gb: 2    # Down from 10 GB - less verbose logging
+    monthly_data_scanned_gb: 10    # Down from 1,000 GB - minimal insights queries
+    
+  module.ecs.aws_cloudwatch_log_group.ecs_service_logs["backoffice"]:
+    storage_gb: 3              # Minimal archival storage
+    monthly_data_ingested_gb: 1.5  # Lower logging volume
+    monthly_data_scanned_gb: 5     # Reduced scanning
+    
+  module.ecs.aws_cloudwatch_log_group.ecs_service_logs["consul"]:
+    storage_gb: 2              # Service discovery logs are minimal
+    monthly_data_ingested_gb: 1    # Low volume service
+    monthly_data_scanned_gb: 2     # Rarely queried
+    
+  module.ecs.aws_cloudwatch_log_group.ecs_service_logs["nextjs"]:
+    storage_gb: 4              # Frontend logs
+    monthly_data_ingested_gb: 2    # Moderate logging
+    monthly_data_scanned_gb: 8     # Some debugging queries
+    
+  module.ecs.aws_cloudwatch_log_group.ecs_service_logs["spring-gateway"]:
+    storage_gb: 3              # Gateway logs
+    monthly_data_ingested_gb: 1.5  # API request logs
+    monthly_data_scanned_gb: 5     # Limited querying
+    
+  # X-Ray daemon logs (minimal usage in dev)
+  module.ecs.aws_cloudwatch_log_group.xray_daemon_logs[0]:
+    storage_gb: 1              # Tracing logs are small
+    monthly_data_ingested_gb: 0.5  # Minimal tracing in dev
+    monthly_data_scanned_gb: 1     # Rarely analyzed
+    
+  # Keycloak application logs
+  module.keycloak.aws_cloudwatch_log_group.keycloak_logs:
+    storage_gb: 3              # Auth service logs
+    monthly_data_ingested_gb: 1.5  # Authentication events
+    monthly_data_scanned_gb: 3     # Occasional debugging
+    
+  # RDS database logs
+  module.rds.aws_cloudwatch_log_group.rds_logs:
+    storage_gb: 2              # Database logs are typically small
+    monthly_data_ingested_gb: 1    # Query and error logs
+    monthly_data_scanned_gb: 2     # Database troubleshooting
+    
+  # ========================================
+  # WAF - Dev Traffic Patterns
+  # ========================================
+  
+  module.waf.aws_wafv2_web_acl.this:
+    # Requests processed by WAF (realistic for dev team)
+    monthly_requests: 100000   # Down from 8.33M - much more realistic for 3-5 devs
+    
+  # ========================================
+  # Secrets Manager - Dev Usage
+  # ========================================
+  
+  # Keycloak database password
+  aws_secretsmanager_secret.keycloak_db_password:
+    monthly_requests: 1000     # Down from 10,000 - fewer secret retrievals
+    
+  # RDS database password  
+  aws_secretsmanager_secret.rds_password:
+    monthly_requests: 500      # Even lower - main DB accessed less frequently
+    
+  # ========================================
+  # ECR Repositories - Dev Image Storage
+  # ========================================
+  
+  # Container image repositories (reduced storage with lifecycle policies)
+  module.ecr.aws_ecr_repository.this["agenticx"]:
+    storage_gb: 15             # Down from 50 GB - lifecycle policies clean old images
+    
+  module.ecr.aws_ecr_repository.this["backoffice"]:
+    storage_gb: 10             # Smaller application
+    
+  module.ecr.aws_ecr_repository.this["consul"]:
+    storage_gb: 8              # Lightweight service discovery image
+    
+  module.ecr.aws_ecr_repository.this["nextjs"]:
+    storage_gb: 12             # Frontend build artifacts
+    
+  module.ecr.aws_ecr_repository.this["spring-gateway"]:
+    storage_gb: 15             # Java application with dependencies
+
+# ========================================
+# Usage Notes for Development Team
+# ========================================
+#
+# This configuration reflects realistic usage patterns for a 3-5 person 
+# development team with the following assumptions:
+#
+# 1. Development/staging environment (not production)
+# 2. Business hours usage (8-10 hours/day, 5 days/week)
+# 3. Limited external traffic and API calls
+# 4. Minimal data retention requirements
+# 5. Cost optimization is prioritized over high availability
+#
+# Key Optimizations Applied:
+# - Reduced backup storage (25GB vs 238GB default)
+# - Lower CloudWatch log retention and ingestion
+# - Minimal Load Balancer Capacity Units
+# - Realistic API request volumes
+# - Smaller container image storage with lifecycle policies
+# - Development-appropriate resource allocation
+#
+# Expected Cost Reduction: 60-70% from default estimates
+# Estimated Monthly Cost: $200-300 (vs $656 default)
+#
+# ========================================
