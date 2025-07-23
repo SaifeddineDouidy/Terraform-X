@@ -118,8 +118,3 @@ variable "db_endpoint" {
   description = "The endpoint of the Keycloak RDS instance."
   type        = string
 }
-
-variable "name_prefix" {
-  description = "Prefix for naming Keycloak resources."
-  type        = string
-}
