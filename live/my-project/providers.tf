@@ -8,6 +8,12 @@ terraform {
 }
 provider "aws" {
   region = var.aws_region
+   access_key                  = "dummy"
+  secret_key                  = "dummy"
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_region_validation      = true
+  skip_requesting_account_id  = true
 
   default_tags {
     tags = local.common_tags
