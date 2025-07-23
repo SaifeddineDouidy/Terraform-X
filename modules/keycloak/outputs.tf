@@ -7,8 +7,3 @@ output "keycloak_alb_zone_id" {
   description = "The canonical hosted zone ID of the Keycloak ALB (for Route 53 Alias records)."
   value       = aws_lb.keycloak_alb.zone_id
 }
-
-output "keycloak_rds_endpoint" {
-  description = "The endpoint address of the Keycloak RDS database."
-  value       = aws_db_instance.keycloak_rds.address
-}

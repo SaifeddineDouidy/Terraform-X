@@ -259,8 +259,8 @@ module "keycloak" {
   source                 = "../../modules/keycloak"
   name_prefix            = "${local.environment_mapped}-keycloak"
   vpc_id                 = module.network.vpc_id
-  public_subnet_ids      = module.network.keycloak_public_subnet_ids
-  private_subnet_ids     = module.network.keycloak_private_subnet_ids
+  public_subnet_ids      = module.network.public_subnet_ids
+  private_subnet_ids     = module.network.private_subnet_ids
   tags                   = local.common_tags
   keycloak_port          = 8080 # Keycloak's default HTTP port
   certificate_arn        = aws_acm_certificate.this[0].arn
@@ -272,8 +272,8 @@ module "keycloak" {
   aws_region             = var.aws_region
   domain_name            = var.domain_name
   db_username            = var.keycloak_db_username
-  db_password            = random_password.keycloak_db_password.result
-  db_endpoint            = module.keycloak.keycloak_rds_endpoint
+  db_password_secret_arn = aws_secretsmanager_secret.keycloak_db_password.arn
+  db_endpoint            = module.rds.db_endpoint
 }
 
 # data "aws_ami" "amazon_linux_2" {
