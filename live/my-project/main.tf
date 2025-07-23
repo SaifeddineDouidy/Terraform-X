@@ -183,21 +183,8 @@ resource "aws_secretsmanager_secret_rotation" "keycloak_db_password_rotation" {
   }
 }
 
-data "aws_caller_identity" "current" {}
+# data "aws_caller_identity" "current" {}
 
-#------------------------------------------------
-# locals {
-#   mock_aws = true
-# }
-
-# data "aws_caller_identity" "current" {
-#   count = local.mock_aws ? 0 : 1
-# }
-
-# data "aws_availability_zones" "available" {
-#   count = local.mock_aws ? 0 : 1
-# }
-#------------------------------------------------
 module "waf" {
   source      = "../../modules/waf"
   name_prefix = local.environment_mapped
