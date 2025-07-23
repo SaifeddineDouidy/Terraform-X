@@ -124,13 +124,18 @@ resource "aws_ecs_task_definition" "keycloak_td" {
           containerPort = var.keycloak_port
           hostPort      = var.keycloak_port
           protocol      = "tcp"
-        }
+        },
       ]
       environment = [
         { name = "KC_DB", value = "postgres" },
         { name = "KC_DB_URL", value = "jdbc:postgresql://${var.db_endpoint}:${var.db_port}/keycloak" },
         { name = "KC_DB_USERNAME", value = var.db_username },
-        { name = "KC_DB_PASSWORD", value = var.db_password },
+      ]
+      secrets = [
+        {
+          name      = "KC_DB_PASSWORD"
+          valueFrom = var.db_password_secret_arn
+        },
         { name = "KC_HOSTNAME", value = "keycloak.${var.domain_name}" }, # Public hostname
         { name = "KC_PROXY", value = "edge" },
         { name = "KC_HTTP_PORT", value = tostring(var.keycloak_port) },
@@ -177,6 +182,9 @@ resource "aws_cloudwatch_log_group" "keycloak_logs" {
   tags              = var.tags
 }
 
+data "aws_secretsmanager_secret_version" "keycloak_db_password" {
+  secret_id = var.db_password_secret_arn
+}
 resource "aws_db_instance" "keycloak_rds" {
   identifier           = lower(replace("${var.name_prefix}-keycloak-rds", "_", "-"))
   engine               = var.db_engine
@@ -184,7 +192,7 @@ resource "aws_db_instance" "keycloak_rds" {
   instance_class       = var.db_instance_type
   allocated_storage    = var.db_allocated_storage
   username             = var.db_username
-  password             = var.db_password
+  password             = data.aws_secretsmanager_secret_version.keycloak_db_password.secret_string
   db_subnet_group_name = aws_db_subnet_group.keycloak_rds_sng.name
   vpc_security_group_ids = [aws_security_group.keycloak_rds_sg.id]
   multi_az             = true # Always Multi-AZ for HA Keycloak DB

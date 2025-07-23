@@ -102,10 +102,9 @@ variable "db_username" {
   type        = string
 }
 
-variable "db_password" {
-  description = "Master password for Keycloak RDS."
+variable "db_password_secret_arn" {
+  description = "The ARN of the AWS Secrets Manager secret for the Keycloak database password."
   type        = string
-  sensitive   = true
 }
 
 variable "db_port" {

@@ -238,7 +238,7 @@ provider "postgresql" {
   port            = module.rds.db_instance_port
   database        = "postgres"
   username        = var.db_username
-  password        = var.db_password
+  password        = random_password.rds_password.result
   sslmode         = "require"
   connect_timeout = 15
 }
