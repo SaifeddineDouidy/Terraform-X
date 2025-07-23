@@ -20,11 +20,13 @@ provider "aws" {
   skip_metadata_api_check     = true
   skip_region_validation      = true
   skip_requesting_account_id  = true
-
-  profile = "default" # Must be a profile name that exists in ~/.aws/credentials
   default_tags {
     tags = local.common_tags
   }
 }
+# provider "aws" {
+#   region = var.aws_region
+#   default_tags {  #     tags = local.common_tags
+#   }
 
 
