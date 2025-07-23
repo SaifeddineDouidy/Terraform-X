@@ -51,6 +51,21 @@ resource "aws_security_group" "keycloak_ecs_sg" {
   tags = var.tags
 }
 
+resource "aws_security_group" "keycloak_rds_sg" {
+  name        = "${var.name_prefix}-keycloak-rds-sg"
+  description = "Allow traffic to Keycloak RDS from ECS"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.keycloak_ecs_sg.id]
+  }
+
+  tags = var.tags
+}
+
 resource "aws_lb" "keycloak_alb" {
   name               = "${var.name_prefix}-keycloak-alb"
   internal           = false
@@ -128,7 +143,7 @@ resource "aws_ecs_task_definition" "keycloak_td" {
       ]
       environment = [
         { name = "KC_DB", value = "postgres" },
-        { name = "KC_DB_URL", value = "jdbc:postgresql://${var.db_endpoint}:${var.db_port}/keycloak" },
+        { name = "KC_DB_URL", value = "jdbc:postgresql://${aws_db_instance.keycloak_rds.endpoint}/keycloak" },
         { name = "KC_DB_USERNAME", value = var.db_username },
       ]
       secrets = [
@@ -165,7 +180,7 @@ resource "aws_ecs_service" "keycloak_service" {
   launch_type     = "FARGATE"
   network_configuration {
     subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.keycloak_ecs_sg.id, var.db_security_group_id]
+    security_groups  = [aws_security_group.keycloak_ecs_sg.id]
     assign_public_ip = false
   }
   load_balancer {
@@ -180,4 +195,29 @@ resource "aws_cloudwatch_log_group" "keycloak_logs" {
   name              = "/ecs/keycloak"
   retention_in_days = 30
   tags              = var.tags
+}
+
+resource "aws_db_subnet_group" "keycloak_rds_sng" {
+  name       = "${var.name_prefix}-keycloak-rds-sng"
+  subnet_ids = var.private_subnet_ids
+  tags       = var.tags
+}
+
+resource "aws_db_instance" "keycloak_rds" {
+  identifier             = "${lower(var.name_prefix)}-rds"
+  instance_class         = var.db_instance_class
+  allocated_storage      = var.db_allocated_storage
+  engine                 = var.db_engine
+  engine_version         = var.db_engine_version
+  username               = var.db_username
+  password               = data.aws_secretsmanager_secret_version.keycloak_db_password.secret_string
+  db_subnet_group_name   = aws_db_subnet_group.keycloak_rds_sng.name
+  vpc_security_group_ids = [aws_security_group.keycloak_rds_sg.id]
+  multi_az               = var.db_multi_az_enabled
+  skip_final_snapshot    = true
+  tags                   = var.tags
+}
+
+data "aws_secretsmanager_secret_version" "keycloak_db_password" {
+  secret_id = var.db_password_secret_arn
 }

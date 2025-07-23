@@ -5,7 +5,7 @@ resource_usage:
   # RDS Database Instances
   # ========================================
   
-  module.keycloak.aws_db_instance.keycloak_rds:
+  module.keycloak.aws_db_instance.this:
     # (Infracost does not support backup_storage_gb here—remove or move these overrides)
     # no overrides for this resource
 

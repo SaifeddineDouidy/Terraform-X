@@ -1,124 +1,111 @@
 variable "name_prefix" {
-  description = "Prefix for naming Keycloak resources."
-  type        = string
-}
-
-variable "aws_region" {
-  description = "The AWS region to deploy resources in."
-  type        = string
-}
-
-variable "domain_name" {
-  description = "The root domain name for the Keycloak hostname."
-  type        = string
-}
-
-variable "ecs_execution_role_arn" {
-  description = "The ARN of the ECS task execution role for Keycloak."
-  type        = string
-}
-
-variable "ecs_task_role_arn" {
-  description = "The ARN of the ECS task role for Keycloak."
+  description = "Prefix for resource names"
   type        = string
 }
 
 variable "vpc_id" {
-  description = "ID of the VPC where Keycloak will be deployed."
+  description = "VPC ID for the Keycloak resources"
   type        = string
 }
 
 variable "public_subnet_ids" {
-  description = "List of public subnet IDs for the Keycloak ALB."
+  description = "Public subnet IDs for the ALB"
   type        = list(string)
 }
 
 variable "private_subnet_ids" {
-  description = "List of private subnet IDs for Keycloak instances and RDS."
+  description = "Private subnet IDs for the ECS tasks and RDS"
   type        = list(string)
 }
 
 variable "tags" {
-  description = "A map of tags to assign to Keycloak resources."
+  description = "Tags to apply to all resources"
   type        = map(string)
   default     = {}
 }
 
 variable "keycloak_port" {
-  description = "The port Keycloak listens on (e.g., 8080 for HTTP, 8443 for HTTPS)."
+  description = "Port for the Keycloak service"
   type        = number
-  default     = 8080 # Default to HTTP for internal ALB communication
+  default     = 8080
 }
 
 variable "certificate_arn" {
-  description = "The ARN of the ACM certificate for the Keycloak ALB HTTPS listener."
+  description = "Certificate ARN for the ALB"
   type        = string
 }
 
 variable "keycloak_cpu" {
-  description = "The CPU units for the Keycloak Fargate task."
+  description = "CPU units for the Keycloak ECS task"
   type        = number
-  default     = 1024 # 1 vCPU
 }
 
 variable "keycloak_memory" {
-  description = "The memory (in MiB) for the Keycloak Fargate task."
+  description = "Memory for the Keycloak ECS task"
   type        = number
-  default     = 2048 # 2 GB
 }
 
 variable "desired_count" {
-  description = "The desired number of Keycloak Fargate tasks."
+  description = "Desired number of Keycloak ECS tasks"
   type        = number
-  default     = 2
+}
+
+variable "ecs_execution_role_arn" {
+  description = "ECS execution role ARN"
+  type        = string
+}
+
+variable "ecs_task_role_arn" {
+  description = "ECS task role ARN"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+}
+
+variable "domain_name" {
+  description = "Domain name for Keycloak"
+  type        = string
+}
+
+variable "db_username" {
+  description = "Username for the Keycloak database"
+  type        = string
+}
+
+variable "db_password_secret_arn" {
+  description = "ARN of the secret containing the database password"
+  type        = string
+}
+
+variable "db_instance_class" {
+  description = "Instance class for the Keycloak RDS instance"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "Allocated storage for the Keycloak RDS instance"
+  type        = number
+  default     = 20
 }
 
 variable "db_engine" {
-  description = "Database engine for Keycloak RDS (e.g., postgres, mysql)."
+  description = "Database engine for the Keycloak RDS instance"
   type        = string
   default     = "postgres"
 }
 
 variable "db_engine_version" {
-  description = "Database engine version for Keycloak RDS."
+  description = "Database engine version for the Keycloak RDS instance"
   type        = string
-  default     = "14.7"
+  default     = "13.7"
 }
 
-variable "db_instance_type" {
-  description = "RDS instance type for Keycloak database."
-  type        = string
-  default     = "db.t4g.small" # Example instance type
-}
-
-variable "db_allocated_storage" {
-  description = "Allocated storage for Keycloak RDS in GB."
-  type        = number
-  default     = 20
-}
-
-variable "db_username" {
-  description = "Master username for Keycloak RDS."
-  type        = string
-}
-
-variable "db_security_group_id" {
-  description = "The ID of the security group for the Keycloak RDS instance."
-  type        = string
-}
-
-variable "db_password_secret_arn" {
-  description = "The ARN of the AWS Secrets Manager secret for the Keycloak database password."
-  type        = string
-}
-
-variable "db_port" {
-  description = "Port for Keycloak RDS."
-  type        = number
-  default     = 5432 # Default for PostgreSQL
-}
-
-variable "db_endpoint" {
-  description = "The endpoint of the Keycloak RDS instance."
-  type        = string
+variable "db_multi_az_enabled" {
+  description = "Enable multi-AZ for the Keycloak RDS instance"
+  type        = bool
+  default     = false
 }

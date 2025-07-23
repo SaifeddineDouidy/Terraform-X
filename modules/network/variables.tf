@@ -41,3 +41,14 @@ variable "single_nat_gateway" {
   type        = bool
   default     = false
 }
+variable "keycloak_public_subnet_cidrs" {
+  description = "CIDR blocks for Keycloak public subnets"
+  type        = list(string)
+  default     = []
+}
+
+variable "keycloak_private_subnet_cidrs" {
+  description = "CIDR blocks for Keycloak private subnets"
+  type        = list(string)
+  default     = []
+}
