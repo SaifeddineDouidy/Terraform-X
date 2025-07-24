@@ -84,7 +84,7 @@ rds_multi_az_enabled = false
 # It is used by the 'iam' module (modules/iam/main.tf) for IAM policy and by the 'rds' module (modules/rds/main.tf) to create the bucket.
 rds_backup_s3_bucket_name = "my-dev-rds-backup-bucket" # Replace with your desired S3 bucket name for RDS backups
 
-keycloak_db_username = "keycloakuser"
+keycloak_db_username = "keycloak_user"
 
 enable_waf = false
 
@@ -92,5 +92,5 @@ enable_waf = false
 keycloak_db_instance_class      = "db.t4g.micro"
 keycloak_db_allocated_storage   = 20
 keycloak_db_engine              = "postgres"
-keycloak_db_engine_version      = "13.7"
+keycloak_db_engine_version      = "16.8"
 keycloak_db_multi_az_enabled    = true

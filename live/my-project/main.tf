@@ -250,13 +250,22 @@ resource "postgresql_database" "app_databases" {
   name     = each.value
   owner    = var.db_username
 }
-module "route53" {
+module "route53_keycloak" {
   source       = "../../modules/route53"
   domain_name  = var.domain_name
-  subdomain    = "dev.${var.domain_name}"
+  subdomain    = "keycloak.${var.domain_name}"
   alb_dns_name = module.keycloak.keycloak_alb_dns_name
   alb_zone_id  = module.keycloak.keycloak_alb_zone_id
 }
+
+module "route53_main_app" {
+  source       = "../../modules/route53"
+  domain_name  = var.domain_name
+  subdomain    = "dev.${var.domain_name}"
+  alb_dns_name = module.alb.alb_dns_name
+  alb_zone_id  = module.alb.alb_zone_id
+}
+
 module "keycloak" {
   source                 = "../../modules/keycloak"
   name_prefix            = "${local.environment_mapped}-keycloak"

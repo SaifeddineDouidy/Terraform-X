@@ -1,145 +1,180 @@
-\documentclass[a4paper,12pt]{article}
+\documentclass[a4paper,11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{geometry}
-\geometry{margin=2cm}
+\geometry{margin=2cm, top=2.5cm, bottom=2.5cm}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{caption}
 \usepackage{setspace}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{float}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{minted}
 
-\setstretch{1.2}
+\setstretch{1.3}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textit{HolisticX Infrastructure Developer Guide}}
+\fancyfoot[C]{\thepage}
 
-\title{\textbf{HolisticX Cloud Architecture (Revised)}}
+\definecolor{sectioncolor}{rgb}{0.1,0.1,0.4}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{sectioncolor}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{sectioncolor}}
+  {\thesubsection}{1em}{}
+
+\title{\textbf{HolisticX Infrastructure Developer Guide}}
 \author{Saifeddine Douidy / ToumAI}
 \date{\today}
 
 \begin{document}
 
 \maketitle
+\thispagestyle{empty}
 \tableofcontents
 \newpage
 
-\section{Overall Architecture Review}
+\section{Introduction}
+This document serves as the primary technical guide for the HolisticX cloud infrastructure. It details the Terraform code structure, explains the multi-environment deployment strategy using Terraform Workspaces, and provides a summary of the underlying AWS architecture. The entire infrastructure is managed as code to ensure consistency, repeatability, and version control.
 
-The architecture is a modern microservices-based system built for scalability, resilience, and security on AWS. It follows a layered design consisting of a secure network layer, a container-based application layer, a managed data layer, and a robust edge layer for handling incoming requests. Key updates include the centralization of the Keycloak identity provider on a dedicated, highly available Fargate cluster, the removal of the redundant API Gateway, and the implementation of automated secret management with AWS Secrets Manager.
+\section{Project Structure}
+The repository is organized into two main directories: \texttt{live} and \texttt{modules}.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{architecture.png} % Placeholder for a new diagram
-    \caption{Overall Architecture}
-\end{figure}
+\begin{description}
+    \item[\texttt{modules/}] This directory contains reusable, modular components that define a specific piece of the architecture (e.g., a VPC, an ECS service, an RDS database). Each module is self-contained and exposes a set of input variables for customization.
+    \item[\texttt{live/}] This directory represents the deployable, top-level configuration. It composes the reusable modules from the \texttt{modules/} directory to build the complete infrastructure. The \texttt{live/my-project} directory is the root from which all Terraform commands should be run.
+\end{description}
 
-\section{Network Layer: The Foundation}
+\section{Module-by-Module Breakdown}
+\begin{description}
+    \item[\texttt{network}] The foundational module. It creates the VPC, all four subnet types (Main Public/Private, Keycloak Public/Private), the Internet Gateway, and the NAT Gateway.
+    \item[\texttt{iam}] Defines all necessary IAM roles and policies, including the Task Execution Role (for ECS to pull images) and the Task Role (for application code to access AWS services).
+    \item[\texttt{ecr}] Creates a dedicated ECR repository for each microservice defined in the \texttt{.tfvars} file.
+    \item[\texttt{rds}] Provisions the main, shared PostgreSQL RDS instance for the application microservices.
+    \item[\texttt{ecs\_fargate}] A complex module that creates the main ECS cluster and deploys all application microservices (Spring Gateway, Next.js, etc.) as Fargate services.
+    \item[\texttt{keycloak}] A self-contained module that provisions the entire isolated Keycloak stack: its dedicated ALB, ECS cluster, and RDS database.
+    \item[\texttt{alb}] Provisions the main Application Load Balancer for the application services.
+    \item[\texttt{route53}] Manages the AWS Route 53 Hosted Zone and automatically creates DNS records to point subdomains to the correct load balancers.
+    \item[\texttt{waf}] Defines the AWS Web Application Firewall rules, which can be associated with the load balancers.
+    \item[\texttt{xray}] Configures AWS X-Ray for distributed tracing.
+\end{description}
 
-This layer, primarily defined in \texttt{modules/network/main.tf}, creates a secure and isolated environment within an AWS Virtual Private Cloud (VPC) (\texttt{10.0.0.0/16}). This VPC serves as a shared development environment for multiple projects.
+\section{Multi-Environment Strategy with Terraform Workspaces}
+The project is designed to manage multiple environments (e.g., development, staging, production) from a single codebase using **Terraform Workspaces**. Each workspace maintains its own separate state file, ensuring that changes in one environment do not affect another.
 
-The architecture now includes distinct sets of public and private subnets for different purposes:
+\subsection{How it Works}
+The logic is defined in \texttt{live/my-project/locals.tf}. The current workspace is identified by \texttt{terraform.workspace}.
 
+\begin{minted}{terraform}
+locals {
+  // Maps the current workspace name (e.g., "dev-saif") to a 
+  // standardized environment tag (e.g., "Dev").
+  // Defaults to "Dev" if no mapping is found.
+  environment_mapped = lookup(
+    var.workspace_to_environment_tag_map, 
+    terraform.workspace, 
+    "Dev"
+  )
+
+  // ...
+  
+  common_tags = {
+    Project     = var.project
+    Service     = var.service
+    Environment = local.environment_mapped // This tag is used everywhere
+  }
+}
+\end{minted}
+
+This setup allows for both shared and environment-specific configurations.
 \begin{itemize}
-    \item \textbf{General-Purpose Public Subnets (e.g., 10.0.1.0/24, 10.0.2.0/24):} Connected to an Internet Gateway, these host publicly accessible components.
-    \begin{itemize}
-        \item \textbf{Application Load Balancer (ALB):} The primary public entry point for your main application services.
-        \item \textbf{Single NAT Gateway:} Optimized for cost, a single NAT Gateway resides in one of these subnets, enabling outbound internet access for private resources.
-    \end{itemize}
-    \item \textbf{General-Purpose Private Subnets (e.g., 10.0.3.0/24, 10.0.4.0/24):} Isolated from direct internet access, these host internal application services and databases.
-    \begin{itemize}
-        \item \textbf{ECS Fargate Tasks:} All core microservices (\texttt{agenticx}, \texttt{backoffice}, \texttt{spring-gateway}, \texttt{nextjs}, \texttt{consul}) run here.
-        \item \textbf{Application RDS Database:} Your PostgreSQL RDS instance for application data resides here.
-    \end{itemize}
-    \item \textbf{Dedicated Keycloak Public Subnets (e.g., 10.0.5.0/24):} Newly created, dedicated public subnets specifically for the centralized Keycloak cluster's public-facing components.
-    \begin{itemize}
-        \item \textbf{Keycloak Application Load Balancer (ALB):} The public entry point for your centralized Keycloak service.
-    \end{itemize}
-    \item \textbf{Dedicated Keycloak Private Subnets (e.g., 10.0.6.0/24):} Newly created, dedicated private subnets for the Keycloak ECS Fargate tasks and its dedicated RDS database.
-    \begin{itemize}
-        \item \textbf{Keycloak ECS Fargate Tasks:} The Keycloak application instances run here.
-        \item \textbf{Keycloak RDS Database:} A dedicated PostgreSQL RDS instance for Keycloak's internal data resides here.
-    \end{itemize}
+    \item \textbf{Shared Configuration:} The core infrastructure defined in \texttt{main.tf} is the same for all environments.
+    \item \textbf{Environment-Specific Configuration:} You can use different \texttt{.tfvars} files for each environment to specify different instance sizes, VPC CIDRs, or feature flags.
 \end{itemize}
 
-Security groups serve as virtual firewalls, tightly controlling communication between services. Each key component—ALB, ECS services, RDS, and Keycloak components—has its own tailored security group for maximum security.
+\subsection{Step-by-Step Deployment Guide}
+Follow these steps to deploy a new environment or update an existing one. All commands should be run from the \texttt{live/my-project/} directory.
 
-\section{Application and Compute Layer: The Core Logic}
+\subsubsection{1. Create a New Workspace}
+To create a new environment (e.g., for a new feature branch or a staging environment), first create a new workspace.
+\begin{minted}{bash}
+# Create a new workspace named 'staging'
+terraform workspace new staging
+\end{minted}
+This command creates a new, empty state file for the `staging` environment.
 
-This is the heart of the system where application code is deployed. At its center is an ECS Fargate cluster defined in \texttt{modules/ecs\_fargate/main.tf}. This serverless engine hosts the following containers:
+\subsubsection{2. Select the Workspace}
+Before running any commands, always ensure you are in the correct workspace.
+\begin{minted}{bash}
+# List available workspaces
+terraform workspace list
 
-\begin{itemize}
-    \item \texttt{spring-gateway}: Acts as the central routing hub for all backend services.
-    \item \texttt{nextjs}: Serves the frontend UI.
-    \item \texttt{agenticx}, \texttt{backoffice}: Represent core backend microservices.
-    \item \texttt{consul}: Runs as an ECS Fargate task, providing service discovery for the \texttt{spring-gateway} and other services.
-    \item \texttt{keycloak}: The centralized identity and access management solution, now running as a highly available ECS Fargate cluster.
-\end{itemize}
+# Switch to the 'staging' workspace
+terraform workspace select staging
+\end{minted}
 
-All ECS Fargate tasks are configured to use \textbf{Graviton (ARM64)} processors for improved price-performance. Docker images for each service are stored in AWS ECR, as defined in \texttt{modules/ecr/main.tf}, and are pulled by Fargate tasks during deployment.
+\subsubsection{3. Prepare a Variable File}
+Create a new variable file for your environment, e.g., \texttt{env/staging.tfvars}. You can copy \texttt{env/develop.tfvars} as a starting point and adjust the values as needed (e.g., increase instance sizes, enable Multi-AZ for RDS).
 
-\section{Data and Observability Layer}
+\subsubsection{4. Plan the Deployment}
+Always run a \texttt{plan} first. This is a dry run that shows you exactly what changes will be made.
+\begin{minted}{bash}
+# For the staging environment
+terraform plan -var-file="env/staging.tfvars"
+\end{minted}
+**Review the plan carefully.** Ensure it is creating, modifying, or destroying the resources you expect.
 
-\begin{itemize}
-    \item \textbf{Application Data:} Managed via a PostgreSQL RDS instance located in the general-purpose private subnets and accessible only to authorized ECS tasks.
-    \item \textbf{Keycloak Data:} Managed via a \textbf{dedicated PostgreSQL RDS instance} located in the Keycloak private subnets, accessible only by the Keycloak Fargate tasks. This ensures strict isolation of identity data.
-    \item \textbf{Secrets Management:} Database access credentials and other sensitive information are securely stored and retrieved using AWS Secrets Manager. Terraform automates the creation, initial population, and \textbf{automated rotation} of these secrets, eliminating the need for plaintext passwords in configuration files.
-    \item \textbf{S3 Cost Optimization:} RDS backup S3 buckets are configured with lifecycle policies to transition older data to Glacier and to abort incomplete multipart uploads, reducing storage costs.
-    \item \textbf{Observability:} Achieved with AWS X-Ray, integrated via the \texttt{xray-daemon} running as a sidecar container alongside each service, allowing tracing requests through the entire system. CloudWatch is configured to collect logs from ECS tasks and databases for centralized monitoring and troubleshooting, with a \textbf{30-day retention period} to optimize costs.
-\end{itemize}
+\subsubsection{5. Apply the Changes}
+Once you are confident in the plan, apply it.
+\begin{minted}{bash}
+# For the staging environment
+terraform apply -var-file="env/staging.tfvars"
+\end{minted}
 
-\section{Communication and Request Flow}
+\subsubsection{6. Post-Deployment: DNS Configuration}
+For the very first deployment of a new root domain, you must perform a one-time manual step.
+\begin{minted}{bash}
+# Get the AWS name servers for your new Route 53 Hosted Zone
+terraform output name_servers
+\end{minted}
+Log in to your domain registrar (IONOS) and update the name server (NS) records for your domain to the four values provided by the output. This delegates DNS control to AWS.
 
-The communication flow starts when a user sends a request to the system.
-
-\subsection{DNS and Public Entry Points}
-\begin{itemize}
-    \item \textbf{Route 53:} AWS Route 53 is used as the authoritative DNS service.
-    \begin{itemize}
-        \item \texttt{holisticx.com} (or \texttt{dev.holisticx.com}) points to the \textbf{Application ALB} via an \texttt{Alias} record.
-        \item \texttt{keycloak.holisticx.com} points to the \textbf{Keycloak ALB} via a separate \texttt{Alias} record.
-    \end{itemize}
-    \item \textbf{Manual DNS Step:} After Terraform deployment, the nameservers provided by Route 53 for \texttt{holisticx.com} must be manually updated at your domain registrar.
-\end{itemize}
-
-\subsection{Request Flow: User to Application}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.1\textwidth]{user_scenario_1.png} % Placeholder for a new diagram
-    \caption{User Request Flow Diagram}
-\end{figure}
-
-\begin{enumerate}
-    \item \textbf{User Request:} A user types \texttt{holisticx.com} (or \texttt{dev.holisticx.com}) into their browser.
-    \item \textbf{DNS Resolution:} The browser queries DNS (via Route 53), which returns the IP address of the \textbf{Application ALB}.
-    \item \textbf{Application ALB:} The browser connects to the Application ALB. The ALB's listener rule forwards \textit{all} incoming traffic (\texttt{/*}) to the \texttt{spring-gateway} service's target group.
-    \item \textbf{Spring Gateway (Central Routing Hub):} The \texttt{spring-gateway} service receives the request. Based on its internal application logic and configuration, it determines which backend microservice should handle the request (e.g., \texttt{nextjs} for frontend, \texttt{agenticx} for data).
-    \item \textbf{Service Discovery (Consul):} For backend microservices, the \texttt{spring-gateway} queries the \texttt{consul} Fargate task (using AWS Cloud Map for discovery) to find the healthy private IP address and port of the target service.
-    \item \textbf{Internal Routing:} The \texttt{spring-gateway} then routes the request internally to the appropriate ECS Fargate task (e.g., \texttt{nextjs}, \texttt{agenticx}, \texttt{backoffice}).
-    \item \textbf{Backend Processing:} The target microservice processes the request, potentially interacting with the \textbf{Application RDS Database}.
-    \item \textbf{Response:} The response travels back through the \texttt{spring-gateway} and the Application ALB to the user's browser.
-\end{enumerate}
-
-\subsection{Authentication Flow: User Login via Keycloak}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{user_scenario_2.png} % Placeholder for a new diagram
-    \caption{Keycloak Login Flow Diagram}
-\end{figure}
-
-\begin{enumerate}
-    \item \textbf{Login Initiation:} When the user clicks "Login" in the application frontend, their browser is redirected to the Keycloak login page, typically at \texttt{keycloak.holisticx.com/auth/...}.
-    \item \textbf{Keycloak DNS Resolution:} The browser performs a DNS lookup for \texttt{keycloak.holisticx.com}. Route 53 resolves this to the IP address of the \textbf{Keycloak ALB}.
-    \item \textbf{Keycloak ALB:} The browser connects to the Keycloak ALB, which forwards the request to a healthy \textbf{Keycloak Fargate Task}.
-    \item \textbf{Keycloak Authentication:} The Keycloak Fargate task processes the login request. It interacts with its \textbf{dedicated Keycloak RDS Database} to validate user credentials, manage sessions, and issue authentication tokens (e.g., JWTs).
-    \item \textbf{Token Return:} Keycloak returns the login page or the authentication token to the browser, redirecting back to the application.
-    \item \textbf{Token Validation (Spring Gateway):} For subsequent API calls requiring authentication, the \texttt{spring-gateway} intercepts the request. It communicates with the Keycloak Fargate cluster (via the Keycloak ALB) to validate the user's authentication token before routing the request to the appropriate backend microservice.
-\end{enumerate}
-
-\section{Conclusion}
-
-This AWS-based microservices architecture provides a robust, scalable, and secure foundation for modern cloud-native applications. With its modular components, layered design, and built-in observability, it supports flexible deployments, secure communication, and efficient request routing. The centralization of Keycloak on ECS Fargate significantly reduces management overhead and costs while maintaining high availability. Seamless integration with AWS managed services like Route 53, RDS, ECS Fargate, CloudWatch, and Secrets Manager makes this system production-ready and easy to maintain.
+\section{Architectural Summary}
+For a detailed breakdown of the cloud architecture, including network diagrams, security group rules, and IAM role permissions, please refer to the \texttt{HolisticX\_Cloud\_Architecture\_Report.tex} document.
 
 \end{document}
+    \item \textbf{ECR Repositories:} Each service has a dedicated ECR repository to store its versioned Docker images.
+    \item \textbf{Optimization:} All tasks are configured to use **Graviton (ARM64)** processors for optimal price-performance.
+\end{itemize}
+
+\section{Data & Secrets Layer}
+\begin{itemize}
+    \item \textbf{Main RDS Instance:} A \texttt{db.t3.micro} PostgreSQL instance for the main application.
+    \item \textbf{Keycloak RDS Instance:} A dedicated \texttt{db.t3.micro} PostgreSQL instance for Keycloak, ensuring identity data is physically and logically isolated. For the \texttt{develop} environment, Multi-AZ is disabled to reduce costs.
+    \item \textbf{AWS Secrets Manager:} This is the source of truth for all database credentials.
+        \begin{itemize}
+            \item Two secrets are created: \texttt{develop/rds/password} and \texttt{develop/keycloak/db/password}.
+            \item Passwords are automatically generated by Terraform and stored in Secrets Manager.
+            \item **Automated Rotation:** A rotation policy is configured to automatically change the passwords every 30 days, enhancing security.
+            \item Applications are granted IAM permission to fetch these secrets dynamically at runtime.
+        \end{itemize}
+\end{itemize}
+
+\section{Security Deep Dive}
+\subsection{Security Groups (Network Firewall Rules)}
+The following table details the precise firewall rules governing traffic flow.
+
+\begin{longtable}{@{}lllll@{}}
+\toprule
+\textbf{Security Group} & \textbf{Direction} & \textbf{Source} & \textbf{Port} & \textbf{Purpose} \\
+\midrule
+\endhead
+Main App ALB & Ingress & \texttt{0.0.0.0/0} & 443/TCP & Allow publ
