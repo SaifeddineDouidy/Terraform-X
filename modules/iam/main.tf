@@ -126,7 +126,6 @@ resource "aws_iam_role_policy_attachment" "consul_ec2_policy_attach" {
 resource "aws_iam_instance_profile" "consul_ec2_profile" {
   name = "${var.name_prefix}-consul-ec2-profile"
   role = aws_iam_role.consul_ec2_role.name
-  tags = var.tags
 }
 
 resource "aws_iam_role" "rds_instance_role" {

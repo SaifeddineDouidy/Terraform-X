@@ -8,6 +8,7 @@ locals {
 
   common_tags = {
     Project     = var.project
+    Service     = var.service # Restore the default service tag
     Environment = local.environment_mapped
   }
 }

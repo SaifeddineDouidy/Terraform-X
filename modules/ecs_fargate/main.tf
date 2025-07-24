@@ -23,6 +23,7 @@ resource "aws_service_discovery_private_dns_namespace" "this" {
   name        = "${var.cluster_name}.local"
   description = "Private DNS Namespace for ECS services"
   vpc         = var.vpc_id
+  tags        = var.tags
 }
 
 resource "aws_service_discovery_service" "this" {
@@ -40,6 +41,7 @@ resource "aws_service_discovery_service" "this" {
     routing_policy = "MULTIVALUE"
   }
 
+  tags = var.tags
 }
 
 resource "aws_ecs_task_definition" "svc" {
@@ -142,4 +144,5 @@ resource "aws_ecs_service" "this" {
   service_registries {
     registry_arn = aws_service_discovery_service.this[each.key].arn
   }
+  tags = var.tags
 }

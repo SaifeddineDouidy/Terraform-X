@@ -51,7 +51,9 @@ resource "aws_subnet" "keycloak_private" {
 # NAT Gateway in each public subnet
 resource "aws_eip" "nat" {
   count = var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)
-  tags  = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-eip-nat-${count.index}"
+  })
 }
 
 resource "aws_nat_gateway" "this" {
