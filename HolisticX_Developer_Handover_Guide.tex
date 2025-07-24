@@ -1,0 +1,167 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{margin=2cm, top=2.5cm, bottom=2.5cm}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{minted}
+\usepackage{tcolorbox}
+
+\setstretch{1.3}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textit{HolisticX Infrastructure: Developer Handover & Guide}}
+\fancyfoot[C]{\thepage}
+
+\definecolor{sectioncolor}{rgb}{0.1,0.1,0.4}
+\definecolor{boxback}{rgb}{0.97,0.97,0.97}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{sectioncolor}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{sectioncolor}}
+  {\thesubsection}{1em}{}
+
+\newtcolorbox{guidebox}[1]{
+  colback=boxback,
+  colframe=sectioncolor,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\title{\textbf{HolisticX Infrastructure: Developer Handover \& Guide}}
+\author{Saifeddine Douidy / ToumAI}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+
+\section{Introduction \& Core Principles}
+This document is the primary technical guide for the HolisticX cloud infrastructure. It details the Terraform code, the multi-environment deployment strategy, and the underlying AWS architecture.
+
+\begin{itemize}
+    \item \textbf{Infrastructure as Code (IaC):} All infrastructure is managed by Terraform. \textbf{Do not make manual changes in the AWS Console.}
+    \item \textbf{Modularity:} The code is organized into reusable modules for clarity and maintainability.
+    \item \textbf{Environment Isolation:} Each environment (dev, staging, prod) is a completely separate, isolated deployment managed by Terraform Workspaces, each with its own state file.
+\end{itemize}
+
+\section{Project Setup \& Prerequisites}
+\begin{guidebox}{Action Required: Configure the Terraform Backend}
+Before you can deploy anything, you must configure the remote backend. This is where Terraform will store its state file, which is critical for collaboration and state locking.
+
+\begin{enumerate}
+    \item \textbf{Create an S3 Bucket:} Manually create a private S3 bucket in your AWS account. This bucket must be created before you run Terraform. A good name would be \texttt{holisticx-terraform-state-<your-account-id>}.
+    \item \textbf{Update Backend Configuration:} Open the file \texttt{live/my-project/backend.tf}. Update the \texttt{bucket} name to the one you just created.
+    \begin{minted}{terraform}
+# In live/my-project/backend.tf
+terraform {
+  backend "s3" {
+    bucket = "holisticx-terraform-state-<your-account-id>" # <-- CHANGE THIS
+    key    = "live/my-project/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+    \end{minted}
+    \item \textbf{Initialize Terraform:} Run \texttt{terraform init}. This will configure your local setup to use the remote S3 bucket for state storage.
+\end{enumerate}
+\end{guidebox}
+
+\section{Code Structure Explained}
+\begin{description}
+    \item[\texttt{modules/}] A library of reusable architectural components (VPC, RDS, etc.).
+    \item[\texttt{live/my-project/}] The composition root. This is where you run all Terraform commands. It assembles the modules to build the complete infrastructure.
+\end{description}
+
+\section{Multi-Environment Strategy with Workspaces}
+We use Terraform Workspaces to manage multiple environments from a single codebase.
+
+\subsection{The Workspace-to-Environment Mapping}
+The logic in \texttt{live/my-project/locals.tf} translates a flexible workspace name (e.g., \texttt{dev-saifeddine}) into a standardized environment tag (e.g., \texttt{Dev}) that is applied to all resources for cost tracking.
+
+\begin{minted}{terraform}
+locals {
+  // This lookup finds the current workspace name in a map.
+  // If not found, it defaults to "Dev". This is powerful because
+  // any new developer workspace is automatically tagged correctly.
+  environment_mapped = lookup(
+    var.workspace_to_environment_tag_map, 
+    terraform.workspace, 
+    "Dev"
+  )
+}
+\end{minted}
+
+\section{Deployment Guide}
+\subsection{Step 1: Create and Select Your Workspace}
+\begin{minted}{bash}
+# Run from live/my-project/
+cd live/my-project
+
+# Create a workspace for your feature or environment
+terraform workspace new feature-billing
+
+# Switch to it
+terraform workspace select feature-billing
+\end{minted}
+
+\subsection{Step 2: Create Your Variable File}
+Copy an existing \texttt{.tfvars} file (\texttt{cp env/develop.tfvars env/feature-billing.tfvars}) and modify it for your needs. \textbf{Crucially, you must provide a globally unique name for the \texttt{rds\_backup\_s3\_bucket\_name} variable.}
+
+\subsection{Step 3: Cost Estimation (Best Practice)}
+Before applying, always estimate the cost. This project is configured to use **Infracost**.
+\begin{minted}{bash}
+# Authenticate with Infracost Cloud (one-time setup)
+infracost auth login
+
+# Generate a cost breakdown based on your variable file
+infracost breakdown --path . \
+  --terraform-var-file="env/feature-billing.tfvars" \
+  --usage-file="infracost-usage.yml"
+\end{minted}
+Review the output to understand the financial impact of your changes.
+
+\subsection{Step 4: Plan and Apply}
+\begin{minted}{bash}
+# Always run a plan first to see the intended changes
+terraform plan -var-file="env/feature-billing.tfvars"
+
+# If the plan is correct, apply it
+terraform apply -var-file="env/feature-billing.tfvars"
+\end{minted}
+
+\subsection{Step 5: Post-Deployment DNS}
+For the first deployment, you must delegate DNS from your registrar (IONOS) to AWS.
+\begin{minted}{bash}
+# Get the AWS name servers for your new Route 53 Hosted Zone
+terraform output name_servers
+\end{minted}
+Log in to IONOS and update the NS records for your domain to these four values.
+
+\section{Future Enhancements: Terraform Cloud}
+For enhanced collaboration, security, and governance, migrating to **Terraform Cloud** is the recommended next step.
+\begin{itemize}
+    \item \textbf{Centralized State Management:} It provides a more robust and secure alternative to the S3 backend.
+    \item \textbf{Collaborative Runs:} It allows for team-based review and approval of Terraform runs.
+    \item \textbf{Cost Estimation:} It can be integrated with Infracost to automatically show a cost estimate on every pull request.
+    \item \textbf{Policy as Code:} Enforce security and compliance policies automatically.
+\end{itemize}
+
+\section{Architectural Reference}
+For a high-level overview of the cloud architecture, including diagrams and security summaries, please refer to the \texttt{HolisticX\_Cloud\_Architecture\_Report.tex} document.
+
+\end{document}

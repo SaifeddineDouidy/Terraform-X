@@ -31,7 +31,9 @@ module "ecr" {
     }
   }
 
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "ecr-repositories"
+  })
 }
 
 module "ecs" {
@@ -67,14 +69,18 @@ module "ecs" {
   execution_role_arn = module.iam.ecs_execution_role_arn
   task_role_arn      = module.iam.ecs_task_role_arn
 
-  tags         = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "application-services"
+  })
   xray_enabled = true
 }
 
 module "xray" {
   source      = "../../modules/xray"
   name_prefix = local.environment_mapped
-  tags        = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "observability"
+  })
 }
 
 module "rds" {
@@ -87,7 +93,9 @@ module "rds" {
   db_username               = var.db_username
   db_password               = random_password.rds_password.result
   multi_az_enabled          = var.rds_multi_az_enabled
-  tags                      = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "shared-database"
+  })
   rds_backup_s3_bucket_name = var.rds_backup_s3_bucket_name
 }
 
@@ -116,7 +124,9 @@ module "alb" {
       path = "/*"
     }
   }
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "main-load-balancer"
+  })
 }
 
 resource "aws_acm_certificate" "this" {
@@ -128,12 +138,16 @@ resource "aws_acm_certificate" "this" {
     create_before_destroy = true
   }
 
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "dns-certificate"
+  })
 }
 
 resource "aws_secretsmanager_secret" "rds_password" {
   name = "${local.environment_mapped}/rds/password"
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "secrets-management"
+  })
 
   recovery_window_in_days = 0 # Set to 0 to allow immediate deletion for dev environments
 }
@@ -160,7 +174,9 @@ resource "aws_secretsmanager_secret_rotation" "rds_password_rotation" {
 
 resource "aws_secretsmanager_secret" "keycloak_db_password" {
   name = "${local.environment_mapped}/keycloak/db/password"
-  tags = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "secrets-management"
+  })
 
   recovery_window_in_days = 0
 }
@@ -190,7 +206,9 @@ data "aws_caller_identity" "current" {}
 module "waf" {
   source      = "../../modules/waf"
   name_prefix = local.environment_mapped
-  tags        = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "web-application-firewall"
+  })
 }
 
 resource "aws_wafv2_web_acl_association" "this" {
@@ -222,7 +240,9 @@ resource "aws_wafv2_web_acl_association" "this" {
 module "iam" {
   source                    = "../../modules/iam"
   name_prefix               = local.environment_mapped
-  tags                      = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "iam-roles"
+  })
   rds_backup_s3_bucket_name = var.rds_backup_s3_bucket_name
 }
 
@@ -272,7 +292,9 @@ module "keycloak" {
   vpc_id                 = module.network.vpc_id
   public_subnet_ids      = module.network.keycloak_public_subnet_ids
   private_subnet_ids     = module.network.keycloak_private_subnet_ids
-  tags                   = local.common_tags
+  tags = merge(local.common_tags, {
+    Service = "keycloak-auth"
+  })
   keycloak_port          = 8080 # Keycloak's default HTTP port
   certificate_arn        = aws_acm_certificate.this[0].arn
   keycloak_cpu           = 1024

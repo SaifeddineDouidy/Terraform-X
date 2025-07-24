@@ -8,7 +8,6 @@ locals {
 
   common_tags = {
     Project     = var.project
-    Service     = var.service
     Environment = local.environment_mapped
   }
 }
