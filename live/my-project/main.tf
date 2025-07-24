@@ -312,12 +312,3 @@ module "keycloak" {
   db_engine_version      = var.keycloak_db_engine_version
   db_multi_az_enabled    = var.keycloak_db_multi_az_enabled
 }
-
-# data "aws_ami" "amazon_linux_2" {
-#   most_recent = true
-#   filter {
-#     name   = "name"
-#     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-#   }
-#   owners = ["amazon"]
-# }

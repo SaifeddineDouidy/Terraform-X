@@ -120,6 +120,7 @@ resource "aws_ecs_task_definition" "svc" {
       ] : []
     )
   )
+  tags = var.tags
 }
 
 resource "aws_ecs_service" "this" {
@@ -130,6 +131,7 @@ resource "aws_ecs_service" "this" {
   task_definition = aws_ecs_task_definition.svc[each.key].arn
   desired_count   = each.value.desired
   launch_type     = "FARGATE"
+  propagate_tags  = "SERVICE"
 
   network_configuration {
     subnets          = var.subnet_ids
