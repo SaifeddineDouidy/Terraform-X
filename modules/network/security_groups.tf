@@ -12,7 +12,9 @@ resource "aws_security_group" "alb" {
   }
 
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-alb-sg"
+  })
 }
 
 # ECS SG
@@ -42,7 +44,9 @@ resource "aws_security_group" "ecs" {
     cidr_blocks = ["0.0.0.0/0"] # For NAT Gateway
   }
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-ecs-sg"
+  })
 }
 
 # DocumentDB SG
@@ -65,7 +69,9 @@ resource "aws_security_group" "docdb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-docdb-sg"
+  })
 }
 
 # RDS SG
@@ -76,7 +82,9 @@ resource "aws_security_group" "rds" {
 
   # No outbound rules for RDS as per design
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-rds-sg"
+  })
 }
 
 # Consul SG
@@ -107,5 +115,7 @@ resource "aws_security_group" "consul" {
     self      = true
   }
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-consul-sg"
+  })
 }
