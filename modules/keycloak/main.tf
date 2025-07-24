@@ -106,6 +106,7 @@ resource "aws_lb_listener" "keycloak_https_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.keycloak_tg.arn
   }
+  tags = var.tags
 }
 
 resource "aws_ecs_cluster" "keycloak_cluster" {
