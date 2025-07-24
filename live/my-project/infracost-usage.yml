@@ -1,0 +1,57 @@
+version: 0.1
+resource_usage:
+  # ========================================
+  # Load Balancers - Tuned for 5-6 Devs
+  # ========================================
+  module.alb.aws_lb.this:
+    new_connections: 100 # Low number of new connections
+    active_connections: 100 # Low number of active connections
+    processed_bytes_gb: 50 # Minimal data processing for dev traffic
+    rule_evaluations: 10000
+
+  module.keycloak.aws_lb.keycloak_alb:
+    new_connections: 50 # Even lower for auth service
+    active_connections: 50
+    processed_bytes_gb: 20
+    rule_evaluations: 5000
+
+  # ========================================
+  # NAT Gateway - Reduced for Dev Workload
+  # ========================================
+  module.network.aws_nat_gateway.this[0]:
+    monthly_data_processed_gb: 20 # Drastically reduced from 111 GB
+
+  # ========================================
+  # CloudWatch Logs - Optimized for Dev
+  # ========================================
+  aws_cloudwatch_log_group.ecs_service_logs:
+    storage_gb: 10 # Reduced from 166 GB
+    monthly_data_ingested_gb: 5 # Reduced from 10 GB
+    monthly_data_scanned_gb: 50 # Reduced from 1000 GB
+
+  module.keycloak.aws_cloudwatch_log_group.keycloak_logs:
+    storage_gb: 5
+    monthly_data_ingested_gb: 2
+    monthly_data_scanned_gb: 20
+
+  # ========================================
+  # S3 Backup Bucket - Realistic Dev Usage
+  # ========================================
+  module.rds.aws_s3_bucket.rds_backup_bucket:
+    storage_gb: 50 # Reduced from 225 GB
+    monthly_tier_1_requests: 1000 # PUT/POST requests
+    monthly_tier_2_requests: 10000 # GET/SELECT requests
+    monthly_select_data_scanned_gb: 100 # Reduced from 2500 GB
+    monthly_select_data_returned_gb: 100 # Reduced from 7250 GB
+
+  # ========================================
+  # WAF & Secrets Manager - Dev Request Volume
+  # ========================================
+  aws_wafv2_web_acl.this:
+    monthly_requests: 100000 # Reduced from ~8.3M
+
+  aws_secretsmanager_secret.rds_password:
+    monthly_requests: 1000 # Reduced from 1M
+
+  aws_secretsmanager_secret.keycloak_db_password:
+    monthly_requests: 1000 # Reduced from 1M
