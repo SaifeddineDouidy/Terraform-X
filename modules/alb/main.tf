@@ -49,6 +49,7 @@ resource "aws_lb_listener" "http" {
       status_code  = "404"
     }
   }
+  tags = var.tags
 }
 
 resource "aws_lb_listener" "https" {
@@ -64,4 +65,5 @@ resource "aws_lb_listener" "https" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.this["spring-gateway"].arn
   }
+  tags = var.tags
 }

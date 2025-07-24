@@ -1,6 +1,7 @@
 resource "aws_route53_zone" "this" {
   count = var.domain_name != "" ? 1 : 0
   name  = var.domain_name
+  tags  = var.tags
 }
 
 resource "aws_route53_record" "subdomain" {

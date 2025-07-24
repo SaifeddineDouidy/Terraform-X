@@ -44,6 +44,7 @@ resource "aws_iam_policy" "rds_access_policy" {
       Resource = "*"
     }]
   })
+  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "rds_policy_attach" {
@@ -74,6 +75,7 @@ resource "aws_iam_policy" "secrets_manager_access" {
       }
     ]
   })
+  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "secrets_manager_policy_attach" {
@@ -113,6 +115,7 @@ resource "aws_iam_policy" "consul_ec2_policy" {
       }
     ]
   })
+  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "consul_ec2_policy_attach" {
@@ -159,6 +162,7 @@ resource "aws_iam_policy" "rds_s3_backup_policy" {
       ]
     }]
   })
+  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "rds_s3_backup_policy_attach" {

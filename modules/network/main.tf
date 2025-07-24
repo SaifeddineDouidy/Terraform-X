@@ -4,12 +4,16 @@ resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = { Name = "${var.name_prefix}-vpc" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-vpc"
+  })
 }
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "${var.name_prefix}-igw" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-igw"
+  })
 }
 
 
@@ -19,7 +23,9 @@ resource "aws_subnet" "public" {
   cidr_block        = var.public_subnet_cidrs[count.index]
   map_public_ip_on_launch = true
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  tags = { Name = "${var.name_prefix}-public-subnet-${count.index}" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-public-subnet-${count.index}"
+  })
 }
 
 resource "aws_subnet" "keycloak_public" {
@@ -28,14 +34,18 @@ resource "aws_subnet" "keycloak_public" {
   cidr_block        = var.keycloak_public_subnet_cidrs[count.index]
   map_public_ip_on_launch = true
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  tags = { Name = "${var.name_prefix}-keycloak-public-subnet-${count.index}" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-keycloak-public-subnet-${count.index}"
+  })
 }
 
 resource "aws_subnet" "keycloak_private" {
   count      = length(var.keycloak_private_subnet_cidrs)
   vpc_id     = aws_vpc.this.id
   cidr_block = var.keycloak_private_subnet_cidrs[count.index]
-  tags       = { Name = "${var.name_prefix}-keycloak-private-${count.index}" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-keycloak-private-${count.index}"
+  })
 }
 
 # NAT Gateway in each public subnet
@@ -47,7 +57,9 @@ resource "aws_nat_gateway" "this" {
   count         = var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
-  tags = { Name = "${var.name_prefix}-nat-${count.index}" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-nat-${count.index}"
+  })
 }
 
 # Private subnets
@@ -55,7 +67,9 @@ resource "aws_subnet" "private" {
   count      = length(var.private_subnet_cidrs)
   vpc_id     = aws_vpc.this.id
   cidr_block = var.private_subnet_cidrs[count.index]
-  tags       = { Name = "${var.name_prefix}-private-${count.index}" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-private-${count.index}"
+  })
 }
 
 
@@ -67,7 +81,9 @@ resource "aws_route_table" "public" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.this.id
   }
-  tags = { Name = "${var.name_prefix}-rt-public" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-rt-public"
+  })
 }
 
 resource "aws_route_table_association" "public" {
@@ -79,7 +95,9 @@ resource "aws_route_table_association" "public" {
 # Private route table → NAT
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "${var.name_prefix}-rt-private" }
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-rt-private"
+  })
 }
 
 resource "aws_route" "private_nat" {
