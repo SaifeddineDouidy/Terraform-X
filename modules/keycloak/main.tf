@@ -199,7 +199,7 @@ resource "aws_cloudwatch_log_group" "keycloak_logs" {
 }
 
 resource "aws_db_subnet_group" "keycloak_rds_sng" {
-  name       = "${var.name_prefix}-keycloak-rds-sng"
+  name       = lower("${var.name_prefix}-keycloak-rds-sng")
   subnet_ids = var.private_subnet_ids
   tags       = var.tags
 }

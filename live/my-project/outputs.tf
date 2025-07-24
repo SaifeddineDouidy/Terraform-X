@@ -73,5 +73,5 @@ output "ecs_cluster_id" {
 
 output "route53_nameservers" {
   description = "The name servers for the Route 53 Hosted Zone. These must be updated at your domain registrar."
-  value       = module.route53.name_servers
+  value       = module.route53_keycloak.name_servers
 }

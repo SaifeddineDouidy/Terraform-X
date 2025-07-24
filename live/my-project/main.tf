@@ -5,14 +5,14 @@
 # }
 
 module "network" {
-  source               = "../../modules/network"
+  source                        = "../../modules/network"
   vpc_cidr                      = var.vpc_cidr
   public_subnet_cidrs           = var.public_subnet_cidrs
   private_subnet_cidrs          = var.private_subnet_cidrs
   keycloak_public_subnet_cidrs  = var.keycloak_public_subnet_cidrs
   keycloak_private_subnet_cidrs = var.keycloak_private_subnet_cidrs
   name_prefix                   = local.environment_mapped
-  single_nat_gateway   = true
+  single_nat_gateway            = true
 }
 
 
@@ -84,15 +84,15 @@ module "xray" {
 }
 
 module "rds" {
-  source                    = "../../modules/rds"
-  name_prefix               = local.environment_mapped
-  vpc_id                    = module.network.vpc_id
-  subnet_ids                = module.network.private_subnet_ids
-  security_group_ids        = [module.network.rds_sg_id]
-  db_names                  = var.db_names
-  db_username               = var.db_username
-  db_password               = random_password.rds_password.result
-  multi_az_enabled          = var.rds_multi_az_enabled
+  source             = "../../modules/rds"
+  name_prefix        = local.environment_mapped
+  vpc_id             = module.network.vpc_id
+  subnet_ids         = module.network.private_subnet_ids
+  security_group_ids = [module.network.rds_sg_id]
+  db_names           = var.db_names
+  db_username        = var.db_username
+  db_password        = random_password.rds_password.result
+  multi_az_enabled   = var.rds_multi_az_enabled
   tags = merge(local.common_tags, {
     Service = "shared-database"
   })
@@ -238,8 +238,8 @@ resource "aws_wafv2_web_acl_association" "this" {
 # }
 
 module "iam" {
-  source                    = "../../modules/iam"
-  name_prefix               = local.environment_mapped
+  source      = "../../modules/iam"
+  name_prefix = local.environment_mapped
   tags = merge(local.common_tags, {
     Service = "iam-roles"
   })
@@ -287,11 +287,11 @@ module "route53_main_app" {
 }
 
 module "keycloak" {
-  source                 = "../../modules/keycloak"
-  name_prefix            = "${local.environment_mapped}-keycloak"
-  vpc_id                 = module.network.vpc_id
-  public_subnet_ids      = module.network.keycloak_public_subnet_ids
-  private_subnet_ids     = module.network.keycloak_private_subnet_ids
+  source             = "../../modules/keycloak"
+  name_prefix        = "${local.environment_mapped}-keycloak"
+  vpc_id             = module.network.vpc_id
+  public_subnet_ids  = module.network.keycloak_public_subnet_ids
+  private_subnet_ids = module.network.keycloak_private_subnet_ids
   tags = merge(local.common_tags, {
     Service = "keycloak-auth"
   })
