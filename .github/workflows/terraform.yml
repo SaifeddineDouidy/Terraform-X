@@ -47,11 +47,13 @@ jobs:
             echo "✅ Plan generated for $ENV"
           done
 
-      - name: 💰 Infracost - Cost Estimate (optional)
-        if: always()
-        uses: infracost/actions@v2
+      - name: 💰 Setup Infracost
+        uses: infracost/actions/setup@v2
         with:
-          path: live/my-project
           api-key: ${{ secrets.INFRACOST_API_KEY }}
-        env:
-          TERRAFORM_PLAN_FLAGS: --var-file=env/develop.tfvars
+
+      - name: 💰 Infracost cost estimate
+        if: always()
+        run: |
+          infracost breakdown --path live/my-project --terraform-plan-flags "-var-file=env/develop.tfvars"
+
