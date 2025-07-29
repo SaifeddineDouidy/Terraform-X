@@ -1,3 +1,62 @@
+# name: Terraform CI/CD
+
+# on:
+#   push:
+#     branches:
+#       - master
+#   workflow_dispatch:
+
+# env:
+#   AWS_REGION: us-east-1
+
+# jobs:
+#   terraform:
+#     name: 'Terraform Validation & Planning'
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: 🧾 Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: 📦 Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: 1.12.1
+
+#       - name: 🔍 Terraform Format Check
+#         id: fmt
+#         run: terraform fmt -check
+#         working-directory: live/my-project
+
+#       - name: 🛠️ Terraform Init
+#         id: init
+#         run: terraform init
+#         working-directory: live/my-project
+
+#       - name: ✅ Terraform Validate
+#         id: validate
+#         run: terraform validate -no-color
+#         working-directory: live/my-project
+
+#       - name: 🔁 Iterate Environments and Plan
+#         run: |
+#           ENVS=("develop" "uat" "preprod" "prod")
+#           for ENV in "${ENVS[@]}"; do
+#             echo "📁 Environment: $ENV"
+#             terraform -chdir=live/my-project plan -var-file=env/$ENV.tfvars -out=$ENV.tfplan
+#             echo "✅ Plan generated for $ENV"
+#           done
+
+#       - name: 💰 Setup Infracost
+#         uses: infracost/actions/setup@v2
+#         with:
+#           api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+#       - name: 💰 Infracost cost estimate
+#         if: always()
+#         run: |
+#           infracost breakdown --path live/my-project --terraform-plan-flags "-var-file=env/develop.tfvars"
+
 name: Terraform CI/CD
 
 on:
@@ -18,6 +77,14 @@ jobs:
       - name: 🧾 Checkout Code
         uses: actions/checkout@v4
 
+      # Optional: Configure AWS credentials (required for S3/DynamoDB backend)
+      # - name: 🔐 Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ env.AWS_REGION }}
+
       - name: 📦 Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -30,7 +97,7 @@ jobs:
 
       - name: 🛠️ Terraform Init
         id: init
-        run: terraform init
+        run: echo "Skipping terraform init"
         working-directory: live/my-project
 
       - name: ✅ Terraform Validate
@@ -38,22 +105,17 @@ jobs:
         run: terraform validate -no-color
         working-directory: live/my-project
 
-      - name: 🔁 Iterate Environments and Plan
-        run: |
-          ENVS=("develop" "uat" "preprod" "prod")
-          for ENV in "${ENVS[@]}"; do
-            echo "📁 Environment: $ENV"
-            terraform -chdir=live/my-project plan -var-file=env/$ENV.tfvars -out=$ENV.tfplan
-            echo "✅ Plan generated for $ENV"
-          done
+      - name: 📄 Terraform Plan (develop only)
+        run: terraform -chdir=live/my-project plan -var-file=env/develop.tfvars -out=develop.tfplan
 
       - name: 💰 Setup Infracost
         uses: infracost/actions/setup@v2
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-      - name: 💰 Infracost cost estimate
+      - name: 💰 Infracost Cost Estimate
         if: always()
         run: |
-          infracost breakdown --path live/my-project --terraform-plan-flags "-var-file=env/develop.tfvars"
-
+          infracost breakdown \
+            --path live/my-project \
+            --terraform-plan-flags "-var-file=env/develop.tfvars"
