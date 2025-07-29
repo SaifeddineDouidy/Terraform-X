@@ -1,127 +1,98 @@
 # prod.tfvars
 
-# Réseau
-vpc_cidr            = "10.3.0.0/16"
-public_subnet_cidrs = ["10.3.1.0/24", "10.3.2.0/24"]
-private_subnet_cidrs = ["10.3.3.0/24", "10.3.4.0/24"]
-service = "my-project-app"
-vpc_id  = "vpc-0123456789abcdef0" # Placeholder, will be created by Terraform
+# Réseau (Network)
+# Internet Gateway, NAT Gateways, and route tables.
+vpc_cidr            = "10.3.0.0/16"          # CIDR block for the VPC
+public_subnet_cidrs = ["10.3.1.0/24", "10.3.2.0/24"] # CIDR blocks for public subnets
+private_subnet_cidrs = ["10.3.3.0/24", "10.3.4.0/24"] # CIDR blocks for private subnets
 
-# Projet
-project     = "my-project"
-environment = "prod"
+# Production Keycloak cluster has its own dedicated network segments for isolation.
+keycloak_public_subnet_cidrs  = ["10.3.5.0/24", "10.3.6.0/24"]
+keycloak_private_subnet_cidrs = ["10.3.7.0/24", "10.3.8.0/24"]
 
-# Taille de l'infrastructure
-size = "large"
-
-# EC2 SSH
-ssh_key_name     = "my-prod-key"
-allowed_ssh_cidr = ["0.0.0.0/0"] # This should be actual IP addresses of those we wanna give ec2 access to
-
-# SonarQube
-sonarqube_ami_id = "ami-12345678" # Placeholder
-# ClickHouse
-clickhouse_ami_id = "ami-87654321" # Placeholder
+# Projet (Project)
+project     = "HolisticX" # Name of the project
+environment = "prod"    # Current deployment environment
 
 # ECS Fargate services configuration (each service’s CPU, memory, etc.)
 ecs_services = {
   agenticx = {
-    name = "agenticx"
-    cpu           = 256
-    memory        = 512
-    desired_count = 1
-    port          = 8081
+    name                  = "agenticx"
+    cpu                   = 1024
+    memory                = 2048
+    desired_count         = 3
+    port                  = 8070
     lifecycle_policy_path = "policies/agenticx-lifecycle.json"
-    secrets = {}
-  }
-  backoffice = {
-    name = "backoffice"
-    cpu           = 256
-    memory        = 512
-    desired_count = 1
-    port          = 8082
-    lifecycle_policy_path = "policies/backoffice-lifecycle.json"
-    secrets = {}
-  }
-  quality-control = {
-    name = "quality-control"
-    cpu           = 256
-    memory        = 512
-    desired_count = 1
-    port          = 8083
-    lifecycle_policy_path = "policies/quality-control-lifecycle.json"
-    secrets = {}
-  }
-  keycloak = {
-    name = "keycloak"
-    cpu           = 256
-    memory        = 512
-    desired_count = 1
-    port          = 8084
-    lifecycle_policy_path = "policies/keycloak-lifecycle.json"
-    secrets = {}
-  }
-  consul = {
-    name = "consul"
-    cpu           = 128
-    memory        = 256
-    desired_count = 1
-    port          = 8500
-    lifecycle_policy_path = "policies/consul-lifecycle.json"
-    secrets = {}
-  }
+  },
+  analyticx = {
+    name                  = "analyticx"
+    cpu                   = 1024
+    memory                = 2048
+    desired_count         = 3
+    port                  = 8060
+    lifecycle_policy_path = "policies/analyticx-lifecycle.json"
+  },
+  "spring-gateway" = {
+    name                  = "spring-gateway"
+    cpu                   = 1024
+    memory                = 2048
+    desired_count         = 3
+    port                  = 8222
+    lifecycle_policy_path = "policies/agenticx-lifecycle.json"
+  },
   nextjs = {
-    name = "nextjs"
-    cpu           = 256
-    memory        = 512
-    desired_count = 1
-    port          = 8085
+    name                  = "nextjs"
+    cpu                   = 1024
+    memory                = 2048
+    desired_count         = 3
+    port                  = 3000
     lifecycle_policy_path = "policies/nextjs-lifecycle.json"
-    secrets = {}
-  }
-}
-
-
-# ALB target for API Gateway
-alb_dns_name = "alb-prod.myproject.local" # Replace with actual Prod ALB DNS
-
-api_routes = {
-  "agenticx" = {
-    path       = "/agenticx"
-    target_url = "http://${alb_dns_name}/agenticx"
   },
-  "backoffice" = {
-    path       = "/backoffice"
-    target_url = "http://${alb_dns_name}/backoffice"
+  consul = {
+    name                  = "consul"
+    cpu                   = 1024
+    memory                = 2048
+    desired_count         = 3
+    port                  = 8888 # Default Consul HTTP API port
+    lifecycle_policy_path = "policies/consul-lifecycle.json"
   },
-  "quality-control" = {
-    path       = "/quality-control"
-    target_url = "http://${alb_dns_name}/quality-control"
-  },
-  "keycloak" = {
-    path       = "/keycloak"
-    target_url = "http://${alb_dns_name}/keycloak"
-  },
-  "consul" = {
-    path       = "/consul"
-    target_url = "http://${alb_dns_name}/consul"
-  },
-  "nextjs" = {
-    path       = "/nextjs"
-    target_url = "http://${alb_dns_name}/nextjs"
+  "user-management" = {
+    name                  = "user-management"
+    cpu                   = 1024
+    memory                = 2048
+    desired_count         = 3
+    port                  = 8050 # Default Consul HTTP API port
+    lifecycle_policy_path = "policies/user-management-lifecycle.json"
   }
 }
 
 # RDS Database
-db_name     = "mydatabase_prod"
-db_username = "myuser"
-db_password = "CHANGE_ME_TO_A_SECURE_PASSWORD_PROD"
-
-# DocumentDB
-docdb_master_username = "docdbadmin"
-docdb_master_password = "CHANGE_ME_TO_A_DIFFERENT_SECURE_PASSWORD_PROD"
+# These variables configure the PostgreSQL RDS instance via the 'rds' module (modules/rds/main.tf).
+db_names    = ["agenticx_db", "analyticx_db"] # Names of the databases
+db_username = "myuser"     # Master username for the database
 
 # ACM Certificate
-domain_name = "prod.my-cool-app.com" # CHANGE_ME to your actual Prod domain
+# This variable is used by the 'alb' module (modules/alb/main.tf) for HTTPS certificate.
+domain_name = "holisticx.com" 
 
+# RDS Multi-AZ
+# This variable controls whether Multi-AZ deployment is enabled for RDS.
 rds_multi_az_enabled = true
+
+# RDS Backup S3 Bucket Name
+# This variable specifies the name of the S3 bucket used for RDS backups.
+rds_backup_s3_bucket_name = "my-prod-rds-backup-bucket"
+
+# Keycloak is enabled and configured for high availability in the production environment.
+# This points to a separate, robust Keycloak cluster.
+keycloak_db_username = "keycloak_user_prod"
+
+enable_waf = true
+
+# Keycloak RDS - Production Configuration
+# Using a more powerful instance class and larger storage for production load.
+keycloak_db_instance_class      = "db.t4g.medium"
+keycloak_db_allocated_storage   = 100
+keycloak_db_engine              = "postgres"
+keycloak_db_engine_version      = "16.8"
+keycloak_db_multi_az_enabled    = true

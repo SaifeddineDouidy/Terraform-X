@@ -1,0 +1,159 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EC2Network",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:Describe*",
+                "ec2:CreateVpc",
+                "ec2:DeleteVpc",
+                "ec2:ModifyVpcAttribute",
+                "ec2:CreateSubnet",
+                "ec2:DeleteSubnet",
+                "ec2:CreateInternetGateway",
+                "ec2:DeleteInternetGateway",
+                "ec2:AttachInternetGateway",
+                "ec2:DetachInternetGateway",
+                "ec2:CreateNatGateway",
+                "ec2:DeleteNatGateway",
+                "ec2:CreateRoute",
+                "ec2:DeleteRoute",
+                "ec2:CreateRouteTable",
+                "ec2:DeleteRouteTable",
+                "ec2:AssociateRouteTable",
+                "ec2:DisassociateRouteTable",
+                "ec2:AllocateAddress",
+                "ec2:ReleaseAddress",
+                "ec2:CreateSecurityGroup",
+                "ec2:DeleteSecurityGroup",
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:RevokeSecurityGroupIngress",
+                "ec2:AuthorizeSecurityGroupEgress",
+                "ec2:RevokeSecurityGroupEgress"
+            ],
+            "Resource": "*",
+            "Comment": "Permissions pour créer et gérer le réseau VPC (modules/network, modules/keycloak)."
+        },
+        {
+            "Sid": "IAMRolesAndPolicies",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:DeleteRole",
+                "iam:GetRole",
+                "iam:UpdateRole",
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:CreatePolicy",
+                "iam:DeletePolicy",
+                "iam:GetPolicy",
+                "iam:CreateInstanceProfile",
+                "iam:DeleteInstanceProfile",
+                "iam:AddRoleToInstanceProfile",
+                "iam:RemoveRoleFromInstanceProfile",
+                "iam:PassRole"
+            ],
+            "Resource": "arn:aws:iam::ACCOUNT_ID:role/develop-*, arn:aws:iam::ACCOUNT_ID:policy/develop-*, arn:aws:iam::ACCOUNT_ID:instance-profile/develop-*",
+            "Comment": "Permissions pour créer les rôles et politiques nécessaires pour les services ECS et RDS (modules/iam). PassRole est essentiel pour assigner des rôles aux services."
+        },
+        {
+            "Sid": "ECSAndServiceDiscovery",
+            "Effect": "Allow",
+            "Action": [
+                "ecs:*",
+                "servicediscovery:*"
+            ],
+            "Resource": "*",
+            "Comment": "Permissions pour gérer les clusters ECS, les services, les tâches et la découverte de services (modules/ecs_fargate, modules/keycloak)."
+        },
+        {
+            "Sid": "RDSAndS3Backup",
+            "Effect": "Allow",
+            "Action": [
+                "rds:*",
+                "s3:CreateBucket",
+                "s3:DeleteBucket",
+                "s3:PutLifecycleConfiguration",
+                "s3:PutBucketVersioning"
+            ],
+            "Resource": "*",
+            "Comment": "Permissions pour gérer les instances de base de données RDS, les groupes de subnets, et les buckets S3 pour les sauvegardes (modules/rds, modules/keycloak)."
+        },
+        {
+            "Sid": "LoadBalancing",
+            "Effect": "Allow",
+            "Action": "elasticloadbalancing:*",
+            "Resource": "*",
+            "Comment": "Permissions pour gérer les Application Load Balancers, les Target Groups et les Listeners (modules/alb, modules/keycloak)."
+        },
+        {
+            "Sid": "ECR",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:CreateRepository",
+                "ecr:DeleteRepository",
+                "ecr:PutLifecyclePolicy",
+                "ecr:DescribeRepositories"
+            ],
+            "Resource": "*",
+            "Comment": "Permissions pour créer et gérer les dépôts de conteneurs (modules/ecr)."
+        },
+        {
+            "Sid": "LoggingAndMonitoring",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:DeleteLogGroup",
+                "logs:PutRetentionPolicy",
+                "xray:CreateSamplingRule",
+                "xray:DeleteSamplingRule",
+                "xray:UpdateSamplingRule"
+            ],
+            "Resource": "*",
+            "Comment": "Permissions pour créer les groupes de logs CloudWatch et les règles de sampling X-Ray (modules/ecs_fargate, modules/rds, modules/xray)."
+        },
+        {
+            "Sid": "DNSAndCertificates",
+            "Effect": "Allow",
+            "Action": [
+                "route53:*",
+                "acm:RequestCertificate",
+                "acm:DeleteCertificate",
+                "acm:DescribeCertificate",
+                "acm:ListTagsForCertificate",
+                "acm:AddTagsToCertificate"
+            ],
+            "Resource": "*",
+            "Comment": "Permissions pour gérer les zones hébergées et les enregistrements Route53, ainsi que les certificats SSL/TLS (modules/route53, root module)."
+        },
+        {
+            "Sid": "SecretsManagement",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:CreateSecret",
+                "secretsmanager:DeleteSecret",
+                "secretsmanager:UpdateSecret",
+                "secretsmanager:PutSecretValue",
+                "secretsmanager:RotateSecret",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:TagResource"
+            ],
+            "Resource": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:dev/*",
+            "Comment": "Permissions pour créer et gérer les mots de passe et autres secrets dans Secrets Manager (root module)."
+        },
+        {
+            "Sid": "WAF",
+            "Effect": "Allow",
+            "Action": [
+                "wafv2:CreateWebACL",
+                "wafv2:DeleteWebACL",
+                "wafv2:UpdateWebACL",
+                "wafv2:AssociateWebACL",
+                "wafv2:DisassociateWebACL"
+            ],
+            "Resource": "*",
+            "Comment": "Permissions pour gérer le Web Application Firewall et l'associer au Load Balancer (modules/waf, root module)."
+        }
+    ]
+}

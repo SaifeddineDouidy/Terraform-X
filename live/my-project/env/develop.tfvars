@@ -28,23 +28,23 @@ ecs_services = {
     cpu                   = 256
     memory                = 512
     desired_count         = 1
-    port                  = 8081
+    port                  = 8070
     lifecycle_policy_path = "policies/agenticx-lifecycle.json"
   },
-  backoffice = {
-    name                  = "backoffice"
+  analyticx = {
+    name                  = "analyticx"
     cpu                   = 256
     memory                = 512
     desired_count         = 1
-    port                  = 8082
-    lifecycle_policy_path = "policies/backoffice-lifecycle.json"
+    port                  = 8060
+    lifecycle_policy_path = "policies/analyticx-lifecycle.json"
   },
   spring-gateway = {
     name                  = "spring-gateway"
     cpu                   = 256
     memory                = 512
     desired_count         = 1
-    port                  = 8080
+    port                  = 8222
     lifecycle_policy_path = "policies/agenticx-lifecycle.json"
   },
   nextjs = {
@@ -52,7 +52,7 @@ ecs_services = {
     cpu                   = 256
     memory                = 512
     desired_count         = 1
-    port                  = 8085
+    port                  = 3000
     lifecycle_policy_path = "policies/nextjs-lifecycle.json"
   },
   consul = {
@@ -60,15 +60,23 @@ ecs_services = {
     cpu                   = 256
     memory                = 512
     desired_count         = 1
-    port                  = 8500 # Default Consul HTTP API port
+    port                  = 8888 # Default Consul HTTP API port
     lifecycle_policy_path = "policies/consul-lifecycle.json" # Assuming you have one or will create one
+  }
+  user-management = {
+    name                  = "user-management"
+    cpu                   = 256
+    memory                = 512
+    desired_count         = 1
+    port                  = 8050 # Default Consul HTTP API port
+    lifecycle_policy_path = "policies/user-management-lifecycle.json" # Assuming you have one or will create one
   }
 }
 
 
 # RDS Database
 # These variables configure the PostgreSQL RDS instance via the 'rds' module (modules/rds/main.tf).
-db_names    = ["agenticx_db", "backoffice_db"] # Names of the databases
+db_names    = ["agenticx_db", "analyticx_db"] # Names of the databases
 db_username = "myuser"     # Master username for the database
 
 # ACM Certificate
