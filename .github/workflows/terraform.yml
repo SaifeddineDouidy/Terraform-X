@@ -49,7 +49,7 @@ jobs:
 
       - name: 💰 Infracost - Cost Estimate (optional)
         if: always()
-        uses: infracost/actions@v3
+        uses: infracost/actions@v2
         with:
           path: live/my-project
           api-key: ${{ secrets.INFRACOST_API_KEY }}
