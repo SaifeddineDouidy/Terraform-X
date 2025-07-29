@@ -14,13 +14,6 @@ keycloak_private_subnet_cidrs = ["10.0.6.0/24"]
 project     = "HolisticX" # Name of the project
 environment = "develop"    # Current deployment environment
 
-# Taille de l'infrastructure (Infrastructure Size)
-# This variable influences the sizing of resources (e.g., instance types) via the 'variables' module.
-# size = "small"
-
-# EC2 SSH
-# allowed_ssh_cidr = ["0.0.0.0/0"] # CIDR blocks allowed to SSH into instances (should be restricted in production)
-
 # ECS Fargate services configuration (each service’s CPU, memory, etc.)
 ecs_services = {
   agenticx = {
