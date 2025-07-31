@@ -1,106 +1,201 @@
-### Overall Architecture Review
+# Terraform Project Documentation
 
-Our architecture is a modern, microservices-based system designed for scalability, resilience, and security on AWS. It effectively separates concerns into distinct layers: a secure network foundation, a flexible application layer with containerized services, a managed data layer, and a robust edge layer for handling incoming requests.
+Ce document fournit des instructions sur la façon de configurer et de gérer ce projet Terraform.
 
-Here is a breakdown of the components and how they interact:
+## Prérequis
 
-#### 1. Network Layer: The Foundation
+Avant de commencer, assurez-vous d'avoir les outils suivants installés :
 
-This layer, primarily defined in [`modules/network/main.tf`](modules/network/main.tf), provides the secure and isolated environment for all your resources.
+*   [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+*   [AWS CLI](https://aws.amazon.com/cli/)
+*   [Infracost](https://www.infracost.io/docs/user_group/v0.10/installation/)
 
-*   **VPC (`aws_vpc`):** A private, isolated section of the AWS cloud. It acts as the boundary for your entire application.
-*   **Subnets:**
-    *   **Public Subnets (`aws_subnet.public`):** These subnets have a direct route to the internet via the **Internet Gateway (`aws_internet_gateway`)**. They are used for resources that need to be publicly accessible, such as the **Application Load Balancer (ALB)** and the **NAT Gateway**.
-    *   **Private Subnets (`aws_subnet.private`):** These subnets do not have a direct route to the internet. Resources here (like your ECS tasks, EC2 Consul server, and RDS database) are protected from direct external access. They can initiate outbound connections to the internet (e.g., for software updates or sending traces to AWS X-Ray) through the **NAT Gateway (`aws_nat_gateway`)**.
-*   **Security Groups:** These act as virtual firewalls, controlling inbound and outbound traffic for your resources. You have granular security groups for the ALB, ECS tasks, RDS, and the Consul EC2 instance, ensuring that they can only communicate with each other on specific ports and protocols.
+## Configuration Initiale
 
-#### 2. Application & Compute Layer: The Core Logic
+### 1. Configuration des Identifiants AWS
 
-This is where your application code runs.
+Pour que Terraform puisse interagir avec votre compte AWS, vous devez configurer vos identifiants. Le moyen le plus simple est de configurer votre `~/.aws/credentials` file:
 
-*   **ECS Fargate Cluster (`aws_ecs_cluster`):** Defined in [`modules/ecs_fargate/main.tf`](modules/ecs_fargate/main.tf), this is a serverless compute engine for your containers. You don't need to manage the underlying EC2 instances. Your services are deployed as Fargate tasks:
-    *   **`keycloak`:** Your identity and access management service.
-    *   **`nextjs`:** Your frontend application.
-    *   **`spring-gateway`:** The central routing point for your backend microservices.
-    *   **`agentics`, `backoffice`, `quality-control`:** Your core backend microservices.
-*   **EC2 Instance (`aws_instance`):** Defined in [`modules/compute/main.tf`](modules/compute/main.tf), this single EC2 instance runs in a private subnet and is dedicated to running **Consul**. Its purpose is service discovery; the `spring-gateway` queries it to find the current IP addresses of the backend microservices.
-*   **ECR (`aws_ecr_repository`):** Defined in [`modules/ecr/main.tf`](modules/ecr/main.tf), this is your private Docker container registry. Your ECS tasks pull their respective Docker images from here upon deployment.
-
-#### 3. Data & Observability Layer
-
-*   **RDS PostgreSQL (`aws_db_instance`):** Defined in [`modules/rds/main.tf`](modules/rds/main.tf), this is your managed relational database. It runs in the private subnets, and only your ECS tasks (via their security group) can access it. Credentials are not hardcoded but are securely managed by **AWS Secrets Manager**.
-*   **AWS X-Ray:** Integrated via the `xray-daemon` sidecar in your ECS tasks. It captures traces of requests as they travel through your system, from the API Gateway to your microservices and database, helping you debug performance issues.
-*   **CloudWatch Logs:** All your services (ECS, RDS) are configured to send logs to CloudWatch for centralized monitoring and analysis.
-
-#### 4. Communication and Request Flow
-
-This is how all the pieces work together, as configured in [`live/my-project/main.tf`](live/my-project/main.tf).
-
-1.  **Entry Point:** A user request first hits the **AWS API Gateway**.
-2.  **Initial Routing (API Gateway):** The API Gateway inspects the request path.
-    *   If the path is for a direct service (e.g., `/keycloak`, `/nextjs`), it proxies the request directly to the corresponding path on the **ALB**.
-    *   If the path is for a microservice (e.g., `/agentics`), it proxies the request to the `spring-gateway` path on the ALB (e.g., `/spring-gateway/agentics`).
-3.  **Load Balancing (ALB):** The ALB receives the request from the API Gateway.
-    *   It terminates SSL/TLS, so backend services don't have to handle encryption.
-    *   It inspects the path and forwards the request to the correct **Target Group**. For example, a request to `/keycloak/*` goes to the `keycloak` target group, and a request to `/spring-gateway/*` goes to the `spring-gateway` target group.
-4.  **Internal Routing (Spring Gateway & Consul):**
-    *   When the `spring-gateway` receives a request (e.g., for `/agentics`), it queries the **Consul** EC2 instance to discover the current private IP address of a healthy `agentics` task.
-    *   It then forwards the request to that `agentics` task.
-5.  **Backend Processing:** The final ECS task (e.g., `agentics` or `keycloak`) processes the request, potentially querying the **RDS PostgreSQL** database.
-6.  **Response:** The response travels back through the same path to the user.
-
-### User Request Scenarios
-
-Here are a few examples of how requests are handled:
-
-**Scenario 1: User logs in via the frontend**
-
-The user interacts with the Next.js UI, which makes an authentication request.
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API Gateway
-    participant ALB
-    participant Keycloak
-    participant RDS
-
-    Client->>API Gateway: POST /keycloak/login
-    API Gateway->>ALB: POST /keycloak/login
-    ALB->>Keycloak: POST /login
-    Keycloak->>RDS: Verify user credentials
-    RDS-->>Keycloak: User OK
-    Keycloak-->>ALB: JWT Token
-    ALB-->>API Gateway: JWT Token
-    API Gateway-->>Client: JWT Token
+```ini
+[default]
+aws_access_key_id = VOTRE_ACCESS_KEY
+aws_secret_access_key = VOTRE_SECRET_KEY
 ```
 
-**Scenario 2: User fetches data from a microservice**
+### 2. Configuration du Backend Terraform
 
-The authenticated user, via the Next.js frontend, requests data that is served by the `agentics` microservice.
+Le state de Terraform est stocké dans un bucket S3 pour la persistance et la collaboration. Vous devez configurer le fichier `live/my-project/backend.tf` avec le nom de votre bucket S3 et d'autres détails si nécessaire.
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API Gateway
-    participant ALB
-    participant Spring Gateway
-    participant Consul
-    participant Agentics
-    participant RDS
+**Exemple de `live/my-project/backend.tf`:**
 
-    Client->>API Gateway: GET /agentics/data (with JWT)
-    API Gateway->>ALB: GET /spring-gateway/agentics/data
-    ALB->>Spring Gateway: GET /agentics/data
-    Spring Gateway->>Consul: Where is 'agentics'?
-    Consul-->>Spring Gateway: IP of Agentics task
-    Spring Gateway->>Agentics: GET /data
-    Agentics->>RDS: Query for data
-    RDS-->>Agentics: Return data
-    Agentics-->>Spring Gateway: Response
-    Spring Gateway-->>ALB: Response
-    ALB-->>API Gateway: Response
-    API Gateway-->>Client: Response
+```terraform
+terraform {
+  backend "s3" {
+    bucket         = "nom-de-votre-bucket-tfstate"
+    key            = "my-project/terraform.tfstate"
+    region         = "eu-west-3"
+    dynamodb_table = "terraform-lock-table"
+    encrypt        = true
+  }
+}
 ```
 
-This architecture is robust and follows best practices for cloud-native applications. It provides a clear separation of concerns, strong security posture, and a scalable foundation for your microservices.
+Assurez-vous que le bucket S3 et la table DynamoDB (pour le verrouillage de l'état) existent avant d'exécuter Terraform.
+
+## Structure du Projet
+
+Le projet est structuré comme suit :
+
+-   `live/`: Contient le code Terraform pour les différents environnements (ex: `my-project`).
+    -   `my-project/`: Le code principal de l'infrastructure.
+        -   `main.tf`: Le point d'entrée principal.
+        -   `variables.tf`: Déclaration des variables.
+        -   `outputs.tf`: Définition des sorties.
+        -   `backend.tf`: Configuration du backend S3.
+        -   `env/`: Contient les fichiers de variables (`.tfvars`) pour chaque environnement (ex: `develop.tfvars`, `production.tfvars`).
+-   `modules/`: Contient les modules Terraform réutilisables (ex: `ecs_fargate`, `rds`, `vpc`). Chaque module a ses propres `main.tf`, `variables.tf`, et `outputs.tf`.
+
+## Workspaces Terraform
+
+Nous utilisons les workspaces Terraform pour gérer différents environnements (développement, production, etc.) avec la même base de code.
+
+Pour lister les workspaces existants :
+`terraform workspace list`
+
+Pour créer un nouveau workspace :
+`terraform workspace new <nom_du_workspace>`
+
+Pour sélectionner un workspace :
+`terraform workspace select <nom_du_workspace>`
+
+Le workspace `develop` est utilisé pour l'environnement de développement.
+
+## Commandes Courantes
+
+Toutes les commandes doivent être exécutées depuis le répertoire `live/my-project`.
+
+```shell
+cd live/my-project
+```
+
+### Initialisation
+Cette commande initialise le backend, télécharge les fournisseurs et les modules.
+```shell
+terraform init
+```
+
+### Formatage
+Cette commande formate le code Terraform pour qu'il soit lisible et conforme aux conventions.
+```shell
+terraform fmt
+```
+
+### Planification
+Cette commande crée un plan d'exécution. Pour l'environnement de développement, nous utilisons le fichier `develop.tfvars`.
+
+```shell
+terraform workspace select develop
+terraform plan -var-file="env/develop.tfvars" 
+or
+terraform plan -var-file="env/develop.tfvars" -out="develop.tfplan"
+
+```
+
+## Estimation des Coûts avec Infracost
+
+Infracost est utilisé pour estimer les coûts de l'infrastructure avant d'appliquer les changements.
+
+### Configuration d'Infracost
+
+1.  **Configurer l'API Key**:
+    ```shell
+    infracost auth login
+    ```
+
+2.  **Configuration du projet**:
+    Infracost peut être configuré pour utiliser des détails spécifiques sur l'utilisation des ressources pour des estimations plus précises. Ceci est fait via le fichier `live/my-project/infracost-usage.yml`.
+
+### Exécuter Infracost
+
+Pour obtenir une estimation des coûts pour l'environnement de développement (this should be executed in the live/my-project) :
+
+```shell
+infracost breakdown --path develop.tfplan --usage-file infracost-usage.yml
+```
+
+Pour voir la différence de coût par rapport à l'état actuel :
+
+```shell
+infracost diff --path . --terraform-var-file env/develop.tfvars --usage-file infracost-usage.yml
+```
+
+### Application (Preferably to be done after cost estimation)
+Pour appliquer les changements (après avoir vérifié le plan).
+```shell
+terraform apply -var-file="env/develop.tfvars"
+```
+
+## Automatisation du Déploiement avec GitHub Actions
+
+L'intégration continue et le déploiement continu (CI/CD) sont gérés via GitHub Actions. Le workflow actuel, défini dans `.github/workflows/terraform.yml`, est configuré pour valider, planifier et estimer les coûts de l'infrastructure à chaque push sur la branche `master`.
+
+### État Actuel du Workflow
+
+Le pipeline exécute les étapes suivantes :
+1.  **Checkout Code**: Récupère le code source.
+2.  **Configure AWS Credentials**: Configure les identifiants AWS pour interagir avec votre compte.
+3.  **Setup Terraform**: Installe la version spécifiée de Terraform.
+4.  **Terraform Format Check**: Vérifie que le code est bien formaté.
+5.  **Terraform Init**: Initialise le répertoire de travail.
+6.  **Terraform Validate**: Valide la syntaxe du code Terraform.
+7.  **Terraform Plan**: Crée un plan d'exécution pour l'environnement `develop`.
+8.  **Infracost Cost Estimate**: Estime les coûts à l'aide d'Infracost.
+
+Actuellement, le workflow ne déploie pas automatiquement les changements. L'étape `apply` doit être exécutée manuellement.
+
+### Activer le Déploiement Automatique
+
+Pour automatiser le déploiement, vous pouvez ajouter une étape `terraform apply` au fichier `.github/workflows/terraform.yml`. Cette étape appliquera le plan généré.
+
+**Exemple d'étape `apply` à ajouter au workflow :**
+
+```yaml
+      - name: 🚀 Terraform Apply (develop only)
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: terraform apply -auto-approve develop.tfplan
+        working-directory: live/my-project
+```
+
+**Important:**
+*   L'ajout d'un `apply` automatique doit être fait avec prudence. Il est recommandé de n'appliquer automatiquement que sur des environnements de non-production comme `develop`.
+*   Pour les environnements de production (`preprod`, `prod`), il est préférable de déclencher le déploiement manuellement après une revue du plan, par exemple via une approbation manuelle sur une pull request ou un `workflow_dispatch`.
+*   Assurez-vous de bien protéger vos branches (`master`, `main`) pour éviter les déploiements non désirés.
+
+## Comment Ajouter un Nouveau Service dans le Cluster ECS
+
+Pour ajouter un nouveau service au cluster ECS Fargate, vous devez :
+
+1.  **Créer un nouveau module de service (si nécessaire)**: Si le service a une configuration très spécifique, vous pouvez créer un nouveau module. Sinon, vous pouvez réutiliser un module existant.
+
+2.  **Ajouter une définition de tâche ECS**: Dans votre code Terraform (probablement dans `modules/ecs_fargate/main.tf` ou un fichier similaire), ajoutez une ressource `aws_ecs_task_definition`.
+
+3.  **Ajouter un service ECS**: Ajoutez une ressource `aws_ecs_service` qui utilise la définition de tâche que vous venez de créer.
+
+4.  **Configurer le routage (si nécessaire)**: Si le service doit être accessible via une URL, configurez l'ALB (Application Load Balancer) pour router le trafic vers le nouveau service. Cela implique de créer/modifier un `aws_lb_target_group` et une `aws_lb_listener_rule`.
+
+5.  **Ajouter les variables nécessaires**: Ajoutez les nouvelles variables (comme l'image Docker, le port, etc.) dans `variables.tf` et définissez leurs valeurs dans les fichiers `.tfvars` de l'environnement.
+
+**Exemple (simplifié) dans `live/my-project/main.tf`:**
+
+```terraform
+module "new_service" {
+  source = "../modules/ecs_fargate"
+
+  # Variables pour le nouveau service
+  service_name      = "mon-nouveau-service"
+  docker_image      = "mon-image:latest"
+  cpu               = 512
+  memory            = 1024
+  container_port    = 8080
+  # ... autres variables
+}
