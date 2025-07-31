@@ -28,176 +28,32 @@ resource_usage:
     monthly_data_processed_gb: 50
 
 resource_type_default_usage:
-  aws_acmpca_certificate_authority:
-    monthly_requests: 2 # Monthly private certificate requests - reduced for dev team
   aws_alb:
     new_connections: 500 # Number of newly established connections per second - dev environment
     active_connections: 500 # Number of active connections per minute - dev environment
     processed_bytes_gb: 50 # Data processed by load balancer - smaller dev workload
     rule_evaluations: 500 # Product of rules and request rate - dev environment
-  aws_api_gateway_rest_api:
-    monthly_requests: 100000 # Monthly requests - typical dev API usage
-  aws_apigatewayv2_api:
-    monthly_requests: 500000 # Monthly requests to HTTP API Gateway - dev usage
-    request_size_kb: 64 # Average request size - smaller dev payloads
-    monthly_messages: 50000 # Monthly Websocket messages - dev usage
-    message_size_kb: 4 # Average message size - smaller for dev
-    monthly_connection_mins: 100000 # Monthly connection minutes - dev usage
-  aws_backup_vault:
-    monthly_efs_warm_restore_gb: 20 # Monthly EFS warm restore - dev environment
-    monthly_efs_cold_restore_gb: 10 # Monthly EFS cold restore - minimal for dev
-    monthly_efs_item_restore_requests: 2 # Monthly item-level restore requests
-    monthly_efs_warm_backup_gb: 25 # Monthly EFS warm backups - dev data
-    monthly_efs_cold_backup_gb: 50 # Monthly EFS cold backups - dev retention
-    monthly_ebs_snapshot_gb: 30 # Monthly EBS snapshots - dev instances
-    monthly_rds_snapshot_gb: 20 # Monthly RDS snapshots - dev databases
-    monthly_aurora_snapshot_gb: 25 # Monthly Aurora snapshots - dev clusters
-    monthly_dynamodb_backup_gb: 10 # Monthly DynamoDB backups - dev tables
-    monthly_dynamodb_restore_gb: 5 # Monthly DynamoDB restore - minimal
-    monthly_fsx_windows_backup_gb: 20 # Monthly FSX Windows backups
-    monthly_fsx_lustre_backup_gb: 20 # Monthly FSX Lustre backups
-  aws_cloudformation_stack:
-    monthly_handler_operations: 1000 # Monthly handler operations - dev deployments
-    monthly_duration_secs: 10000 # Monthly duration of operations - dev complexity
-  aws_cloudformation_stack_set:
-    monthly_handler_operations: 500 # Monthly handler operations - limited stack sets
-    monthly_duration_secs: 5000 # Monthly duration - simpler dev operations
-  aws_cloudfront_distribution:
-    monthly_data_transfer_to_internet_gb:
-      us: 20 # United States, Mexico, Canada - dev traffic
-      europe: 10 # Europe, Israel - limited dev traffic
-      south_africa: 0 # Not used in dev
-      south_america: 0 # Not used in dev
-      japan: 0 # Not used in dev
-      australia: 0 # Not used in dev
-      asia_pacific: 0 # Not used in dev
-      india: 0 # Not used in dev
-    monthly_data_transfer_to_origin_gb:
-      us: 30 # Origin transfer - dev environment
-      europe: 15 # Europe origin transfer
-      south_africa: 0 # Not used
-      south_america: 0 # Not used
-      japan: 0 # Not used
-      australia: 0 # Not used
-      asia_pacific: 0 # Not used
-      india: 0 # Not used
-    monthly_http_requests:
-      us: 500000 # HTTP requests - dev usage
-      europe: 200000 # Europe requests - limited
-      south_africa: 0 # Not used
-      south_america: 0 # Not used
-      japan: 0 # Not used
-      australia: 0 # Not used
-      asia_pacific: 0 # Not used
-      india: 0 # Not used
-    monthly_https_requests:
-      us: 300000 # HTTPS requests - dev usage
-      europe: 100000 # Europe HTTPS requests
-      south_africa: 0 # Not used
-      south_america: 0 # Not used
-      japan: 0 # Not used
-      australia: 0 # Not used
-      asia_pacific: 0 # Not used
-      india: 0 # Not used
-    monthly_shield_requests:
-      us: 50000 # Shield requests - minimal dev usage
-      europe: 25000 # Europe shield requests
-      south_america: 0 # Not used
-      japan: 0 # Not used
-      australia: 0 # Not used
-      singapore: 0 # Not used
-      south_korea: 0 # Not used
-      india: 0 # Not used
-    monthly_invalidation_requests: 100 # Invalidation requests - dev deployments
-    monthly_encryption_requests: 50000 # Field level encryption - limited dev usage
-    monthly_log_lines: 10000000 # Real-time log lines - dev logging
-    custom_ssl_certificates: 0 # No custom SSL for dev
-  aws_cloudhsm_v2_hsm:
-    monthly_hrs: 1 # Monthly HSM hours - minimal dev usage
-  aws_cloudtrail:
-    monthly_additional_management_events: 10000 # Additional management events - dev monitoring
-    monthly_data_events: 100000 # Data events - dev applications
-    monthly_insight_events: 50000 # CloudTrail Insight events - dev analysis
-  aws_cloudwatch_event_bus:
-    monthly_custom_events: 100000 # Custom events - dev applications
-    monthly_third_party_events: 50000 # Third-party events - limited integrations
-    monthly_archive_processing_gb: 5 # Archive processing - minimal dev usage
-    archive_storage_gb: 20 # Archive storage - dev retention
-    monthly_schema_discovery_events: 500000 # Schema discovery events
   aws_cloudwatch_log_group:
     storage_gb: 20 # Log storage - dev applications
     monthly_data_ingested_gb: 5 # Monthly log ingestion - dev volume
     monthly_data_scanned_gb: 50 # Log insights scanning - dev debugging
-  aws_config_config_rule:
-    monthly_rule_evaluations: 1000 # Config rule evaluations - dev compliance
-  aws_config_configuration_recorder:
-    monthly_config_items: 500 # Config item records - dev resources
-    monthly_custom_config_items: 200 # Custom config items - dev specific
-  aws_config_organization_custom_rule:
-    monthly_rule_evaluations: 500 # Organization rule evaluations
-  aws_config_organization_managed_rule:
-    monthly_rule_evaluations: 1000 # Managed rule evaluations
   aws_db_instance:
     additional_backup_storage_gb: 30 # Additional backup storage - dev databases
     monthly_standard_io_requests: 5000000 # I/O requests - dev database activity
     monthly_additional_performance_insights_requests: 10000 # Performance Insights - dev monitoring
-  aws_directory_service_directory:
-    additional_domain_controllers: 0 # No additional controllers for dev
-    shared_accounts: 0 # No shared accounts for dev
   aws_ecr_repository:
     storage_gb: 20 # ECR repository storage - dev container images
-  
   aws_lb:
     new_connections: 300 # New connections per second - dev load balancer
     active_connections: 500 # Active connections per minute
     processed_bytes_gb: 50 # Data processed - dev applications
     rule_evaluations: 1000 # Rule evaluations - dev routing
-  aws_mq_broker:
-    storage_size_gb: 20 # MQ broker storage - dev messaging
-  aws_mwaa_environment:
-    additional_workers: 0.2 # Additional worker instances - minimal dev usage
-    additional_schedulers: 0 # No additional schedulers for dev
-    meta_database_gb: 10 # Meta database storage
   aws_nat_gateway:
     monthly_data_processed_gb: 30 # NAT Gateway data processing - dev outbound traffic
-  aws_neptune_cluster:
-    storage_gb: 20 # Neptune cluster storage - dev graph database
-    monthly_io_requests: 2000000 # I/O requests - dev graph queries
-    backup_storage_gb: 25 # Neptune backup storage
-  aws_neptune_cluster_instance:
-    monthly_cpu_credit_hrs: 5 # CPU credit hours for t3 instances
-  aws_neptune_cluster_snapshot:
-    backup_storage_gb: 30 # Neptune snapshot storage
-  aws_networkfirewall_firewall:
-    monthly_data_processed_gb: 20 # Network Firewall data processing
-  aws_rds_cluster:
-    capacity_units_per_hr: 0.2 # Aurora Capacity Units - dev serverless
-    storage_gb: 20 # Aurora cluster storage - dev database
-    write_requests_per_sec: 2 # Write requests - dev applications
-    read_requests_per_sec: 8 # Read requests - dev queries
-    backup_snapshot_size_gb: 25 # Backup snapshot size
-    average_statements_per_hr: 500 # Statements per hour for backtrack
-    change_records_per_statement: 0.05 # Records changed per statement
-    backtrack_window_hrs: 24 # Backtrack window - dev usage
-    snapshot_export_size_gb: 50 # Snapshot export size
-  aws_rds_cluster_instance:
-    monthly_additional_performance_insights_requests: 50000 # Performance Insights requests
-    capacity_units_per_hr: 0.2 # Serverless V2 capacity units
-  aws_redshift_cluster:
-    managed_storage_gb: 100 # Redshift managed storage
-    excess_concurrency_scaling_secs: 1000 # Concurrency scaling seconds
-    spectrum_data_scanned_tb: 0.1 # Spectrum data scanned
-    backup_storage_gb: 50 # Redshift backup storage
   aws_route53_record:
     monthly_standard_queries: 1000000 # Standard DNS queries - dev applications
     monthly_latency_based_queries: 100000 # Latency-based routing
     monthly_geo_queries: 50000 # Geo DNS queries
-  aws_route53_resolver_endpoint:
-    monthly_queries: 500000 # Resolver endpoint queries
-  aws_s3_bucket_analytics_configuration:
-    monthly_monitored_objects: 1000000 # S3 Analytics monitored objects
-  aws_s3_bucket_inventory:
-    monthly_listed_objects: 50000000 # S3 Inventory listed objects
   aws_s3_bucket:
     object_tags: 100000 # S3 object tags - dev applications
     standard:
@@ -207,92 +63,59 @@ resource_type_default_usage:
       monthly_select_data_scanned_gb: 50 # S3 Select data scanned
       monthly_select_data_returned_gb: 10 # S3 Select data returned
     intelligent_tiering:
-      frequent_access_storage_gb: 0 # Not used in dev
-      infrequent_access_storage_gb: 0 # Not used in dev
-      monitored_objects: 0 # Not used in dev
-      monthly_tier_1_requests: 0 # Not used in dev
-      monthly_tier_2_requests: 0 # Not used in dev
-      monthly_lifecycle_transition_requests: 0 # Not used in dev
-      monthly_select_data_scanned_gb: 0 # Not used in dev
-      monthly_select_data_returned_gb: 0 # Not used in dev
-      early_delete_gb: 0 # Not used in dev
+      frequent_access_storage_gb: 0 
+      infrequent_access_storage_gb: 0 
+      monitored_objects: 0 
+      monthly_tier_1_requests: 0 
+      monthly_tier_2_requests: 0 
+      monthly_lifecycle_transition_requests: 0 
+      monthly_select_data_scanned_gb: 0 
+      monthly_select_data_returned_gb: 0 
+      early_delete_gb: 0 
     standard_infrequent_access:
-      storage_gb: 0 # Not used in dev
-      monthly_tier_1_requests: 0 # Not used in dev
-      monthly_tier_2_requests: 0 # Not used in dev
-      monthly_lifecycle_transition_requests: 0 # Not used in dev
-      monthly_data_retrieval_gb: 0 # Not used in dev
-      monthly_select_data_scanned_gb: 0 # Not used in dev
-      monthly_select_data_returned_gb: 0 # Not used in dev
+      storage_gb: 0 
+      monthly_tier_1_requests: 0 
+      monthly_tier_2_requests: 0 
+      monthly_lifecycle_transition_requests: 0 
+      monthly_data_retrieval_gb: 0 
+      monthly_select_data_scanned_gb: 0 
+      monthly_select_data_returned_gb: 0 
     one_zone_infrequent_access:
-      storage_gb: 0 # Not used in dev
-      monthly_tier_1_requests: 0 # Not used in dev
-      monthly_tier_2_requests: 0 # Not used in dev
-      monthly_lifecycle_transition_requests: 0 # Not used in dev
-      monthly_data_retrieval_gb: 0 # Not used in dev
-      monthly_select_data_scanned_gb: 0 # Not used in dev
-      monthly_select_data_returned_gb: 0 # Not used in dev
+      storage_gb: 0 
+      monthly_tier_1_requests: 0 
+      monthly_tier_2_requests: 0 
+      monthly_lifecycle_transition_requests: 0 
+      monthly_data_retrieval_gb: 0 
+      monthly_select_data_scanned_gb: 0 
+      monthly_select_data_returned_gb: 0 
     glacier_flexible_retrieval:
-      storage_gb: 0 # Not used in dev
-      monthly_tier_1_requests: 0 # Not used in dev
-      monthly_tier_2_requests: 0 # Not used in dev
-      monthly_lifecycle_transition_requests: 0 # Not used in dev
-      monthly_standard_select_data_scanned_gb: 0 # Not used in dev
-      monthly_standard_select_data_returned_gb: 0 # Not used in dev
-      monthly_bulk_select_data_scanned_gb: 0 # Not used in dev
-      monthly_bulk_select_data_returned_gb: 0 # Not used in dev
-      monthly_expedited_select_data_scanned_gb: 0 # Not used in dev
-      monthly_expedited_select_data_returned_gb: 0 # Not used in dev
-      monthly_standard_data_retrieval_requests: 0 # Not used in dev
-      monthly_expedited_data_retrieval_requests: 0 # Not used in dev
-      monthly_standard_data_retrieval_gb: 0 # Not used in dev
-      monthly_expedited_data_retrieval_gb: 0 # Not used in dev
-      early_delete_gb: 0 # Not used in dev
+      storage_gb: 0 
+      monthly_tier_1_requests: 0 
+      monthly_tier_2_requests: 0 
+      monthly_lifecycle_transition_requests: 0 
+      monthly_standard_select_data_scanned_gb: 0 
+      monthly_standard_select_data_returned_gb: 0 
+      monthly_bulk_select_data_scanned_gb: 0 
+      monthly_bulk_select_data_returned_gb: 0 
+      monthly_expedited_select_data_scanned_gb: 0 
+      monthly_expedited_select_data_returned_gb: 0 
+      monthly_standard_data_retrieval_requests: 0 
+      monthly_expedited_data_retrieval_requests: 0 
+      monthly_standard_data_retrieval_gb: 0 
+      monthly_expedited_data_retrieval_gb: 0 
+      early_delete_gb: 0 
     glacier_deep_archive:
-      storage_gb: 0 # Not used in dev
-      monthly_tier_1_requests: 0 # Not used in dev
-      monthly_tier_2_requests: 0 # Not used in dev
-      monthly_lifecycle_transition_requests: 0 # Not used in dev
-      monthly_standard_data_retrieval_requests: 0 # Not used in dev
-      monthly_bulk_data_retrieval_requests: 0 # Not used in dev
-      monthly_standard_data_retrieval_gb: 0 # Not used in dev
-      monthly_bulk_data_retrieval_gb: 0 # Not used in dev
-      early_delete_gb: 0 # Not used in dev
+      storage_gb: 0 
+      monthly_tier_1_requests: 0 
+      monthly_tier_2_requests: 0 
+      monthly_lifecycle_transition_requests: 0 
+      monthly_standard_data_retrieval_requests: 0 
+      monthly_bulk_data_retrieval_requests: 0 
+      monthly_standard_data_retrieval_gb: 0 
+      monthly_bulk_data_retrieval_gb: 0 
+      early_delete_gb: 0 
   aws_secretsmanager_secret:
     monthly_requests: 100000 # Secrets Manager API requests - dev applications
-  aws_sfn_state_machine:
-    monthly_transitions: 50000 # State transitions - dev workflows
-    monthly_requests: 500000 # Workflow requests for Express workflows
-    memory_mb: 64 # Average memory - dev workflows
-    workflow_duration_ms: 500 # Average duration - dev complexity
-  aws_sns_topic:
-    monthly_requests: 50000 # SNS requests - dev notifications
-    request_size_kb: 8 # Request size - smaller dev payloads
-    http_subscriptions: 100 # HTTP/HTTPS subscriptions
-    email_subscriptions: 20 # Email subscriptions - dev team size
-    kinesis_subscriptions: 10 # Kinesis subscriptions
-    mobile_push_subscriptions: 50 # Mobile push subscriptions
-    macos_subscriptions: 10 # MacOS subscriptions
-    sms_subscriptions: 0 # No SMS for dev
-    sms_notification_price: 0.002 # SMS price if used
-  aws_sqs_queue:
-    monthly_requests: 1000000 # SQS requests - dev messaging
-    request_size_kb: 8 # Request size - smaller dev messages
-  aws_ssm_activation:
-    instances: 5 # Managed instances - dev environment
-  aws_ssm_parameter:
-    monthly_api_interactions: 100000 # Parameter Store interactions
-    parameter_storage_hrs: 720 # Storage hours per month
-  aws_transfer_server:
-    monthly_data_downloaded_gb: 25 # Transfer server downloads
-    monthly_data_uploaded_gb: 25 # Transfer server uploads
-  aws_vpc_endpoint:
-    monthly_data_processed_gb: 50 # VPC endpoint data processing
-  aws_vpn_connection:
-    monthly_data_processed_gb: 30 # VPN connection data processing
-  aws_waf_web_acl:
-    rule_group_rules: 5 # Rule Group rules - dev security
-    monthly_requests: 500000 # Web requests - dev applications
   aws_wafv2_web_acl:
     rule_group_rules: 3 # Rule Group rules - dev environment
     managed_rule_group_rules: 10 # Managed Rule Group rules
