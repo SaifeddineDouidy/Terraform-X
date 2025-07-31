@@ -2,6 +2,31 @@
 # Usage values are scaled down to reflect realistic development workloads
 # See docs: https://infracost.io/usage-file/
 version: 0.1
+resource_usage:
+  module.ecs.aws_ecs_service.this["agenticx"]:
+    monthly_cpu_credit_hrs: 730
+    monthly_gb_hrs: 1460
+  module.ecs.aws_ecs_service.this["analyticx"]:
+    monthly_cpu_credit_hrs: 730
+    monthly_gb_hrs: 1460
+  module.ecs.aws_ecs_service.this["consul"]:
+    monthly_cpu_credit_hrs: 182
+    monthly_gb_hrs: 365
+  module.ecs.aws_ecs_service.this["keycloak"]:
+    monthly_cpu_credit_hrs: 730
+    monthly_gb_hrs: 1460
+  module.ecs.aws_ecs_service.this["nextjs-frontend"]:
+    monthly_cpu_credit_hrs: 365
+    monthly_gb_hrs: 730
+  module.ecs.aws_ecs_service.this["quality-control"]:
+    monthly_cpu_credit_hrs: 730
+    monthly_gb_hrs: 1460
+  module.ecs.aws_ecs_service.this["user-management"]:
+    monthly_cpu_credit_hrs: 730
+    monthly_gb_hrs: 1460
+  module.network.aws_nat_gateway.this[0]:
+    monthly_data_processed_gb: 50
+
 resource_type_default_usage:
   aws_acmpca_certificate_authority:
     monthly_requests: 2 # Monthly private certificate requests - reduced for dev team
