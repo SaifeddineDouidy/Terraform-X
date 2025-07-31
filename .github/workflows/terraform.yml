@@ -116,5 +116,5 @@ jobs:
       - name: 💰 Infracost Cost Estimate
         if: always()
         run: |
-          infracost breakdown --path develop.tfplan --usage-file ="infracost-usage.yml" 
+          infracost breakdown --path develop.tfplan --usage-file infracost-usage.yml 
         working-directory: live/my-project
