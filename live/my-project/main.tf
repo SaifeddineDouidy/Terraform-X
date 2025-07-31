@@ -25,9 +25,9 @@ module "ecr" {
   source = "../../modules/ecr"
 
   repositories = {
-    for svc in var.ecs_services : svc.name => {
-      lifecycle_policy_path    = svc.lifecycle_policy_path
-      lifecycle_policy_content = data.local_file.ecr_policies[svc.name].content
+    for k, v in var.ecs_services : k => {
+      lifecycle_policy_path    = v.lifecycle_policy_path
+      lifecycle_policy_content = data.local_file.ecr_policies[k].content
     }
   }
 
@@ -44,14 +44,14 @@ module "ecs" {
   subnet_ids         = module.network.private_subnet_ids
   aws_region         = var.aws_region
 
-  services = { for svc_name, svc_config in var.ecs_services :
+  services = {
+    for svc_name, svc_config in var.ecs_services :
     svc_name => {
       cpu       = svc_config.cpu
       memory    = svc_config.memory
       desired   = svc_config.desired_count
       port      = svc_config.port
       image_url = module.ecr.repository_urls[svc_name]
-
       env = {
         ENV         = local.environment_mapped
         DB_HOST     = module.rds.db_endpoint

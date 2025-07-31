@@ -1,9 +1,6 @@
 variable "repositories" {
-  description = "Map of repositories and their lifecycle policy paths"
-  type = map(object({
-    lifecycle_policy_path = string
-    lifecycle_policy_content = string
-  }))
+  description = "A map of repository names to their lifecycle policy content."
+  type        = map(string)
 }
 
 variable "tags" {

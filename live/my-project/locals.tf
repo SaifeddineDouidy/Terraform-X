@@ -11,4 +11,11 @@ locals {
     Service     = var.service
     Environment = local.environment_mapped
   }
+
+  ecr_repositories = {
+    for name, svc in var.ecs_services : name => {
+      lifecycle_policy_path    = svc.lifecycle_policy_path
+      lifecycle_policy_content = data.local_file.ecr_policies[name].content
+    }
+  }
 }
