@@ -2,6 +2,17 @@
 **/.terraform/*
 .terraform.lock.hcl
 
+# Local environment variables
+.env
+
+# Terraform variable files
+*.tfvars
+
+# Terraform state files
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+
 # .tfstate files
 *.tfstate
 *.tfstate.*.backup

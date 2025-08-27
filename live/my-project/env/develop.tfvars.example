@@ -1,0 +1,94 @@
+# ==============================================================================
+# Example Variables for the 'develop' Environment
+# ==============================================================================
+# Instructions:
+# 1. Copy this file to 'develop.tfvars' (e.g., `cp develop.tfvars.example develop.tfvars`).
+# 2. Replace the placeholder values below with your actual configuration.
+# ==============================================================================
+
+# Réseau (Network)
+vpc_cidr                      = "10.0.0.0/16"
+public_subnet_cidrs           = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs          = ["10.0.3.0/24", "10.0.4.0/24"]
+keycloak_public_subnet_cidrs  = ["10.0.5.0/24"]
+keycloak_private_subnet_cidrs = ["10.0.6.0/24"]
+
+# Projet (Project)
+project     = "MyProject" # Replace with your project name
+environment = "develop"
+
+# ECS Fargate services configuration
+ecs_services = {
+  agenticx = {
+    name                  = "agenticx"
+    cpu                   = 256
+    memory                = 512
+    desired_count         = 1
+    port                  = 8070
+    lifecycle_policy_path = "policies/agenticx-lifecycle.json"
+  },
+  analyticx = {
+    name                  = "analyticx"
+    cpu                   = 256
+    memory                = 512
+    desired_count         = 1
+    port                  = 8060
+    lifecycle_policy_path = "policies/analyticx-lifecycle.json"
+  },
+  spring-gateway = {
+    name                  = "spring-gateway"
+    cpu                   = 256
+    memory                = 512
+    desired_count         = 1
+    port                  = 8222
+    lifecycle_policy_path = "policies/agenticx-lifecycle.json"
+  },
+  nextjs = {
+    name                  = "nextjs"
+    cpu                   = 256
+    memory                = 512
+    desired_count         = 1
+    port                  = 3000
+    lifecycle_policy_path = "policies/nextjs-lifecycle.json"
+  },
+  consul = {
+    name                  = "consul"
+    cpu                   = 256
+    memory                = 512
+    desired_count         = 1
+    port                  = 8888
+    lifecycle_policy_path = "policies/consul-lifecycle.json"
+  },
+  user-management = {
+    name                  = "user-management"
+    cpu                   = 256
+    memory                = 512
+    desired_count         = 1
+    port                  = 8050
+    lifecycle_policy_path = "policies/user-management-lifecycle.json"
+  }
+}
+
+# RDS Database
+db_names    = ["app_db_dev", "analytics_db_dev"] # Example database names
+db_username = "db_admin"                         # Replace with your desired master username
+
+# ACM Certificate
+domain_name = "your-domain.com" # IMPORTANT: Replace with a domain you own and can validate in AWS ACM
+
+# RDS Multi-AZ
+rds_multi_az_enabled = false
+
+# RDS Backup S3 Bucket Name
+rds_backup_s3_bucket_name = "your-unique-dev-rds-backup-bucket-name" # IMPORTANT: S3 bucket names must be globally unique
+
+# Web Application Firewall
+enable_waf = false
+
+# Keycloak RDS
+keycloak_db_instance_class    = "db.t4g.micro"
+keycloak_db_allocated_storage = 20
+keycloak_db_engine            = "postgres"
+keycloak_db_engine_version    = "16.8" # Check AWS for latest supported versions
+keycloak_db_multi_az_enabled  = false
+keycloak_db_username          = "keycloak_admin" # Replace with your desired keycloak DB user

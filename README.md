@@ -1,201 +1,115 @@
-# Terraform Project Documentation
+# Terraform AWS Infrastructure Project
 
-Ce document fournit des instructions sur la façon de configurer et de gérer ce projet Terraform.
+This repository contains Terraform code to provision a scalable and modular infrastructure on AWS, designed to run containerized microservices using ECS Fargate, RDS, and other core AWS services. The entire process is automated via a CI/CD pipeline with GitHub Actions.
 
-## Prérequis
+## Prerequisites
 
-Avant de commencer, assurez-vous d'avoir les outils suivants installés :
+Before you begin, ensure you have the following tools installed:
 
-*   [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+*   [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (v1.12.1 or as specified in `github/workflows/terraform.yml`)
 *   [AWS CLI](https://aws.amazon.com/cli/)
-*   [Infracost](https://www.infracost.io/docs/user_group/v0.10/installation/)
+*   [Infracost](https://www.infracost.io/docs/user_group/v0.10/installation/) (Optional, for local cost estimation)
 
-## Configuration Initiale
+## Project Structure
 
-### 1. Configuration des Identifiants AWS
+The project is organized into two main directories:
 
-Pour que Terraform puisse interagir avec votre compte AWS, vous devez configurer vos identifiants. Le moyen le plus simple est de configurer votre `~/.aws/credentials` file:
+-   `modules/`: Contains reusable Terraform modules for each piece of the infrastructure (e.g., `vpc`, `ecs_fargate`, `rds`). This promotes code reuse and maintainability.
+-   `live/`: Contains the environment-specific configurations that consume the modules.
+    -   `my-project/`: The root directory for a specific deployment (e.g., this project).
+        -   `main.tf`, `variables.tf`, `outputs.tf`: The main Terraform configuration files.
+        -   `backend.tf`: The configuration for the Terraform remote state backend.
+        -   `env/`: Contains the variable definition files (`.tfvars`) for each environment.
+
+## Initial Setup
+
+Follow these steps to configure the project for your own AWS account.
+
+### 1. Configure AWS Credentials
+
+Ensure your AWS CLI is configured with credentials that have sufficient permissions to create the resources defined in this project. The simplest way is to configure your `~/.aws/credentials` file:
 
 ```ini
 [default]
-aws_access_key_id = VOTRE_ACCESS_KEY
-aws_secret_access_key = VOTRE_SECRET_KEY
+aws_access_key_id = YOUR_ACCESS_KEY
+aws_secret_access_key = YOUR_SECRET_KEY
 ```
 
-### 2. Configuration du Backend Terraform
+### 2. Configure the Terraform Backend
 
-Le state de Terraform est stocké dans un bucket S3 pour la persistance et la collaboration. Vous devez configurer le fichier `live/my-project/backend.tf` avec le nom de votre bucket S3 et d'autres détails si nécessaire.
+The Terraform state is stored remotely in an S3 bucket to ensure state persistence and enable collaboration.
 
-**Exemple de `live/my-project/backend.tf`:**
+1.  **Create an S3 Bucket and a DynamoDB Table:** In your AWS account, create a globally unique S3 bucket to store the `terraform.tfstate` file and a DynamoDB table for state locking (to prevent concurrent modifications).
+2.  **Update `backend.tf`:** Open `live/my-project/backend.tf` and replace the placeholder values with the names of the resources you just created.
 
-```terraform
-terraform {
-  backend "s3" {
-    bucket         = "nom-de-votre-bucket-tfstate"
-    key            = "my-project/terraform.tfstate"
-    region         = "eu-west-3"
-    dynamodb_table = "terraform-lock-table"
-    encrypt        = true
-  }
-}
-```
+    ```terraform
+    # live/my-project/backend.tf
+    terraform {
+      backend "s3" {
+        bucket         = "your-terraform-state-bucket-name"  # <-- REPLACE
+        key            = "my-project/terraform.tfstate"
+        region         = "eu-north-1" # Or your preferred region
+        dynamodb_table = "your-terraform-lock-table-name" # <-- REPLACE
+        encrypt        = true
+      }
+    }
+    ```
 
-Assurez-vous que le bucket S3 et la table DynamoDB (pour le verrouillage de l'état) existent avant d'exécuter Terraform.
+### 3. Create Your Environment Variables File
 
-## Structure du Projet
+This project uses `.tfvars` files to manage environment-specific variables. An example file is provided.
 
-Le projet est structuré comme suit :
+1.  Navigate to the `live/my-project/env/` directory.
+2.  Copy the example file to create your own `develop.tfvars` file:
+    ```shell
+    cp develop.tfvars.example develop.tfvars
+    ```
+3.  Open the new `develop.tfvars` file and replace the placeholder values with your own configurations (e.g., your domain name, desired database username, etc.).
 
--   `live/`: Contient le code Terraform pour les différents environnements (ex: `my-project`).
-    -   `my-project/`: Le code principal de l'infrastructure.
-        -   `main.tf`: Le point d'entrée principal.
-        -   `variables.tf`: Déclaration des variables.
-        -   `outputs.tf`: Définition des sorties.
-        -   `backend.tf`: Configuration du backend S3.
-        -   `env/`: Contient les fichiers de variables (`.tfvars`) pour chaque environnement (ex: `develop.tfvars`, `production.tfvars`).
--   `modules/`: Contient les modules Terraform réutilisables (ex: `ecs_fargate`, `rds`, `vpc`). Chaque module a ses propres `main.tf`, `variables.tf`, et `outputs.tf`.
+**Important:** The `.gitignore` file is configured to ignore `*.tfvars` files. **Never commit files containing sensitive variables to your repository.**
 
-## Workspaces Terraform
+## Local Usage
 
-Nous utilisons les workspaces Terraform pour gérer différents environnements (développement, production, etc.) avec la même base de code.
-
-Pour lister les workspaces existants :
-`terraform workspace list`
-
-Pour créer un nouveau workspace :
-`terraform workspace new <nom_du_workspace>`
-
-Pour sélectionner un workspace :
-`terraform workspace select <nom_du_workspace>`
-
-Le workspace `develop` est utilisé pour l'environnement de développement.
-
-## Commandes Courantes
-
-Toutes les commandes doivent être exécutées depuis le répertoire `live/my-project`.
+All Terraform commands should be run from the `live/my-project` directory.
 
 ```shell
 cd live/my-project
 ```
 
-### Initialisation
-Cette commande initialise le backend, télécharge les fournisseurs et les modules.
+### Initialize Terraform
+This command initializes the backend, downloads providers, and modules.
 ```shell
 terraform init
 ```
 
-### Formatage
-Cette commande formate le code Terraform pour qu'il soit lisible et conforme aux conventions.
+### Select a Workspace
+We use Terraform workspaces to manage different environments.
 ```shell
-terraform fmt
-```
-
-### Planification
-Cette commande crée un plan d'exécution. Pour l'environnement de développement, nous utilisons le fichier `develop.tfvars`.
-
-```shell
+# Select the 'develop' workspace (or create it with 'terraform workspace new develop')
 terraform workspace select develop
-terraform plan -var-file="env/develop.tfvars" 
-or
-terraform plan -var-file="env/develop.tfvars" -out="develop.tfplan"
-
 ```
 
-## Estimation des Coûts avec Infracost
-
-Infracost est utilisé pour estimer les coûts de l'infrastructure avant d'appliquer les changements.
-
-### Configuration d'Infracost
-
-1.  **Configurer l'API Key**:
-    ```shell
-    infracost auth login
-    ```
-
-2.  **Configuration du projet**:
-    Infracost peut être configuré pour utiliser des détails spécifiques sur l'utilisation des ressources pour des estimations plus précises. Ceci est fait via le fichier `live/my-project/infracost-usage.yml`.
-
-### Exécuter Infracost
-
-Pour obtenir une estimation des coûts pour l'environnement de développement (this should be executed in the live/my-project) :
-
+### Plan Changes
+This command creates an execution plan, showing you what changes will be made without actually applying them.
 ```shell
-infracost breakdown --path develop.tfplan --usage-file infracost-usage.yml
+terraform plan -var-file="env/develop.tfvars"
 ```
 
-Pour voir la différence de coût par rapport à l'état actuel :
-
-```shell
-infracost diff --path . --terraform-var-file env/develop.tfvars --usage-file infracost-usage.yml
-```
-
-### Application (Preferably to be done after cost estimation)
-Pour appliquer les changements (après avoir vérifié le plan).
+### Apply Changes
+After reviewing the plan, apply the changes to your AWS account.
 ```shell
 terraform apply -var-file="env/develop.tfvars"
 ```
 
-## Automatisation du Déploiement avec GitHub Actions
+## CI/CD with GitHub Actions
 
-L'intégration continue et le déploiement continu (CI/CD) sont gérés via GitHub Actions. Le workflow actuel, défini dans `.github/workflows/terraform.yml`, est configuré pour valider, planifier et estimer les coûts de l'infrastructure à chaque push sur la branche `master`.
+The CI/CD pipeline is defined in `.github/workflows/terraform.yml`. It is configured to run on every push to the `main` branch.
 
-### État Actuel du Workflow
+The pipeline performs the following steps:
+1.  **Checkout & Setup:** Checks out the code and sets up Terraform.
+2.  **Authentication:** Configures AWS credentials using secrets stored in GitHub.
+3.  **Validation:** Runs `terraform fmt`, `init`, and `validate` to ensure code quality and correctness.
+4.  **Plan:** Generates a `terraform plan` for the `develop` environment.
+5.  **Cost Estimation:** Runs `infracost` on the plan to estimate the monthly cost of the changes.
 
-Le pipeline exécute les étapes suivantes :
-1.  **Checkout Code**: Récupère le code source.
-2.  **Configure AWS Credentials**: Configure les identifiants AWS pour interagir avec votre compte.
-3.  **Setup Terraform**: Installe la version spécifiée de Terraform.
-4.  **Terraform Format Check**: Vérifie que le code est bien formaté.
-5.  **Terraform Init**: Initialise le répertoire de travail.
-6.  **Terraform Validate**: Valide la syntaxe du code Terraform.
-7.  **Terraform Plan**: Crée un plan d'exécution pour l'environnement `develop`.
-8.  **Infracost Cost Estimate**: Estime les coûts à l'aide d'Infracost.
-
-Actuellement, le workflow ne déploie pas automatiquement les changements. L'étape `apply` doit être exécutée manuellement.
-
-### Activer le Déploiement Automatique
-
-Pour automatiser le déploiement, vous pouvez ajouter une étape `terraform apply` au fichier `.github/workflows/terraform.yml`. Cette étape appliquera le plan généré.
-
-**Exemple d'étape `apply` à ajouter au workflow :**
-
-```yaml
-      - name: 🚀 Terraform Apply (develop only)
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        run: terraform apply -auto-approve develop.tfplan
-        working-directory: live/my-project
-```
-
-**Important:**
-*   L'ajout d'un `apply` automatique doit être fait avec prudence. Il est recommandé de n'appliquer automatiquement que sur des environnements de non-production comme `develop`.
-*   Pour les environnements de production (`preprod`, `prod`), il est préférable de déclencher le déploiement manuellement après une revue du plan, par exemple via une approbation manuelle sur une pull request ou un `workflow_dispatch`.
-*   Assurez-vous de bien protéger vos branches (`master`, `main`) pour éviter les déploiements non désirés.
-
-## Comment Ajouter un Nouveau Service dans le Cluster ECS
-
-Pour ajouter un nouveau service au cluster ECS Fargate, vous devez :
-
-1.  **Créer un nouveau module de service (si nécessaire)**: Si le service a une configuration très spécifique, vous pouvez créer un nouveau module. Sinon, vous pouvez réutiliser un module existant.
-
-2.  **Ajouter une définition de tâche ECS**: Dans votre code Terraform (probablement dans `modules/ecs_fargate/main.tf` ou un fichier similaire), ajoutez une ressource `aws_ecs_task_definition`.
-
-3.  **Ajouter un service ECS**: Ajoutez une ressource `aws_ecs_service` qui utilise la définition de tâche que vous venez de créer.
-
-4.  **Configurer le routage (si nécessaire)**: Si le service doit être accessible via une URL, configurez l'ALB (Application Load Balancer) pour router le trafic vers le nouveau service. Cela implique de créer/modifier un `aws_lb_target_group` et une `aws_lb_listener_rule`.
-
-5.  **Ajouter les variables nécessaires**: Ajoutez les nouvelles variables (comme l'image Docker, le port, etc.) dans `variables.tf` et définissez leurs valeurs dans les fichiers `.tfvars` de l'environnement.
-
-**Exemple (simplifié) dans `live/my-project/main.tf`:**
-
-```terraform
-module "new_service" {
-  source = "../modules/ecs_fargate"
-
-  # Variables pour le nouveau service
-  service_name      = "mon-nouveau-service"
-  docker_image      = "mon-image:latest"
-  cpu               = 512
-  memory            = 1024
-  container_port    = 8080
-  # ... autres variables
-}
+**Note:** The pipeline is currently configured for planning and validation only. The `terraform apply` step is not automated and must be run manually after reviewing the plan.
