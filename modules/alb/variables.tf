@@ -6,8 +6,9 @@ variable "security_group_id" { type = string }
 
 variable "services" {
   type = map(object({
-    port = number
-    path = string
+    port     = number
+    path     = string
+    priority = optional(number, 100) # Add optional priority for listener rules
   }))
 }
 

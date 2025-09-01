@@ -68,10 +68,32 @@ resource "aws_lb_listener" "https" {
   certificate_arn   = var.certificate_arn
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.this["spring-gateway"].arn
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Not found"
+      status_code  = "404"
+    }
   }
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-https-listener"
   })
+}
+
+resource "aws_lb_listener_rule" "service_rules" {
+  for_each = var.services
+
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = lookup(each.value, "priority", 100) # Allow custom priority, default to 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.this[each.key].arn
+  }
+
+  condition {
+    path_pattern {
+      values = [each.value.path]
+    }
+  }
 }

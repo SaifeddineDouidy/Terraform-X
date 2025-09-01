@@ -25,7 +25,15 @@ variable "environment" {
 
 variable "ecs_services" {
   description = "ECS Fargate services configuration"
-  type        = any
+  type = map(object({
+    name                  = string
+    cpu                   = number
+    memory                = number
+    desired_count         = number
+    port                  = number
+    lifecycle_policy_path = string
+    alb_priority          = optional(number, 100) # Add optional priority for ALB listener rules
+  }))
 }
 
 variable "db_names" {
@@ -133,4 +141,10 @@ variable "keycloak_private_subnet_cidrs" {
   description = "CIDR blocks for Keycloak private subnets"
   type        = list(string)
   default     = []
+}
+
+variable "secret_recovery_window_days" {
+  description = "Number of days for secret recovery window. Set to 0 for immediate deletion in dev environments."
+  type        = number
+  default     = 0
 }

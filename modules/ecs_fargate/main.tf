@@ -26,6 +26,16 @@ resource "aws_service_discovery_private_dns_namespace" "this" {
   tags        = var.tags
 }
 
+output "ecs_cluster_id" {
+  description = "The ID of the ECS cluster."
+  value       = aws_ecs_cluster.this.id
+}
+
+output "service_discovery_namespace_id" {
+  description = "The ID of the private DNS namespace for service discovery."
+  value       = aws_service_discovery_private_dns_namespace.this.id
+}
+
 resource "aws_service_discovery_service" "this" {
   for_each = toset(keys(var.services)) 
   name = each.key

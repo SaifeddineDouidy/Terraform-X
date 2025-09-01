@@ -39,7 +39,7 @@ module "ecr" {
 module "ecs" {
   source             = "../../modules/ecs_fargate"
   vpc_id             = module.network.vpc_id
-  security_group_ids = [module.network.ecs_sg_id]
+  security_group_ids = [module.network.ecs_sg_id, module.consul.consul_security_group_id] # Add Consul SG
   cluster_name       = "${local.environment_mapped}-${var.project}-cluster"
   subnet_ids         = module.network.private_subnet_ids
   aws_region         = var.aws_region
@@ -57,8 +57,8 @@ module "ecs" {
         DB_HOST     = module.rds.db_endpoint
         DB_PORT     = module.rds.db_instance_port
         DB_NAME     = "${svc_name}_db"
-        CONSUL_HOST = "consul.${local.environment_mapped}-${var.project}-cluster.local"
-        CONSUL_PORT = "8500"
+        CONSUL_HOST = module.consul.consul_service_discovery_name
+        CONSUL_PORT = "8500" # Default Consul HTTP API port
       }
       secrets = {
         DB_PASSWORD = aws_secretsmanager_secret.rds_password.arn
@@ -73,6 +73,22 @@ module "ecs" {
     Service = "application-services"
   })
   xray_enabled = true
+}
+
+module "consul" {
+  source                       = "../../modules/consul"
+  name_prefix                  = local.environment_mapped
+  tags                         = local.common_tags
+  ecs_cluster_id               = module.ecs.ecs_cluster_id
+  private_subnet_ids           = module.network.private_subnet_ids
+  desired_count                = 1 # Or a variable for desired count
+  cpu                          = 256
+  memory                       = 512
+  ecs_execution_role_arn       = module.iam.ecs_execution_role_arn
+  ecs_task_role_arn            = module.iam.ecs_task_role_arn
+  aws_region                   = var.aws_region
+  vpc_id                       = module.network.vpc_id
+  service_discovery_namespace_id = module.ecs.service_discovery_namespace_id
 }
 
 module "xray" {
@@ -119,9 +135,11 @@ module "alb" {
   certificate_arn   = length(aws_acm_certificate.this) > 0 ? aws_acm_certificate.this[0].arn : ""
   enable_https      = var.domain_name != ""
   services = {
-    "spring-gateway" = {
-      port = var.ecs_services["spring-gateway"].port
-      path = "/*"
+    for svc_name, svc_config in var.ecs_services :
+    svc_name => {
+      port = svc_config.port
+      path = "/${svc_name}/*" # Example path, adjust as needed
+      priority = lookup(svc_config, "alb_priority", null)
     }
   }
   tags = merge(local.common_tags, {
@@ -149,7 +167,7 @@ resource "aws_secretsmanager_secret" "rds_password" {
     Service = "secrets-management"
   })
 
-  recovery_window_in_days = 0 # Set to 0 to allow immediate deletion for dev environments
+  recovery_window_in_days = var.secret_recovery_window_days
 }
 
 resource "aws_secretsmanager_secret_version" "rds_password" {
@@ -165,7 +183,7 @@ resource "random_password" "rds_password" {
 
 resource "aws_secretsmanager_secret_rotation" "rds_password_rotation" {
   secret_id           = aws_secretsmanager_secret.rds_password.id
-  rotation_lambda_arn = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:aws-secretsmanager-rds-secret-rotation-lambda" # Placeholder ARN, needs to be updated with the actual ARN of the rotation lambda
+  rotation_lambda_arn = module.secrets_rotation_lambda.lambda_function_arn
 
   rotation_rules {
     automatically_after_days = 30
@@ -178,7 +196,7 @@ resource "aws_secretsmanager_secret" "keycloak_db_password" {
     Service = "secrets-management"
   })
 
-  recovery_window_in_days = 0
+  recovery_window_in_days = var.secret_recovery_window_days
 }
 
 resource "aws_secretsmanager_secret_version" "keycloak_db_password" {
@@ -194,7 +212,7 @@ resource "random_password" "keycloak_db_password" {
 
 resource "aws_secretsmanager_secret_rotation" "keycloak_db_password_rotation" {
   secret_id           = aws_secretsmanager_secret.keycloak_db_password.id
-  rotation_lambda_arn = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:aws-secretsmanager-rds-secret-rotation-lambda" # Placeholder ARN
+  rotation_lambda_arn = module.secrets_rotation_lambda.lambda_function_arn
 
   rotation_rules {
     automatically_after_days = 30
@@ -202,6 +220,12 @@ resource "aws_secretsmanager_secret_rotation" "keycloak_db_password_rotation" {
 }
 
 data "aws_caller_identity" "current" {}
+
+module "secrets_rotation_lambda" {
+  source      = "../../modules/secrets_rotation_lambda"
+  name_prefix = local.environment_mapped
+  tags        = local.common_tags
+}
 
 module "waf" {
   source      = "../../modules/waf"
